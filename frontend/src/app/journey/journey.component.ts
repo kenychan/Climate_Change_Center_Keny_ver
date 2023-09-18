@@ -31,7 +31,7 @@ export class JourneyComponent {
   hasNoCollections$?: Observable<boolean>;
 
   view: ViewType = 'default';
-  // Journey View ref
+  // in child whose tag is 'threeJSView'
   @ViewChild('threeJSView', { static: false }) tabs!: ThreeJSComponent;
 
   constructor(
@@ -109,7 +109,7 @@ export class JourneyComponent {
   }
 
   onSelectedTabChange(changeEvent: MatTabChangeEvent) {
-    if (changeEvent.index == 2) {
+    if (changeEvent.index == 2) { //when click tab 2, load threeJS component
       this.tabs.loadRenderer();
     } else {
       this.tabs.unloadRenderer();
@@ -151,4 +151,7 @@ export class JourneyComponent {
       ),
     );
   }
+
+
+
 }

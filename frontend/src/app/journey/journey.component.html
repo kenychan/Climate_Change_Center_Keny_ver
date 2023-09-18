@@ -90,6 +90,7 @@
     </mat-tab>
     <mat-tab [label]="'journey.gallery' | translate">
       <app-gallery-view
+      
         *ngIf="collectionsData$ | async as collectionsData"
         [collectionsData]="collectionsData"
       ></app-gallery-view>

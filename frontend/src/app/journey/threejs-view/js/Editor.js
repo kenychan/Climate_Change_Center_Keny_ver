@@ -15,8 +15,10 @@ _DEFAULT_CAMERA.lookAt( new THREE.Vector3() );
 function Editor() {
 
 	const Signal = signals.Signal; // eslint-disable-line no-undef
-
-	this.signals = {
+//Signals are a way to manage and propagate events or notifications within an application. 
+//They provide a mechanism for decoupling different parts of your code, 
+//allowing components to communicate without needing direct references to each other.
+	this.signals = { //declare signals
 
 		// script
 
@@ -91,7 +93,7 @@ function Editor() {
 		intersectionsDetected: new Signal(),
 
 	};
-
+//declaring 
 	this.config = new Config();
 	this.history = new _History( this );
 	this.storage = new _Storage();
@@ -130,7 +132,7 @@ function Editor() {
 }
 
 Editor.prototype = {
-
+//load scene into function, a scene should have following vars
 	setScene: function ( scene ) {
 
 		this.scene.uuid = scene.uuid;
@@ -155,7 +157,7 @@ Editor.prototype = {
 		}
 
 		this.signals.sceneGraphChanged.active = true;
-		this.signals.sceneGraphChanged.dispatch();
+		this.signals.sceneGraphChanged.dispatch();//change signal
 
 	},
 
@@ -163,10 +165,10 @@ Editor.prototype = {
 
 	addObject: function ( object, parent, index ) {
 
-		var scope = this;
+		var scope = this;//keep private
 
 		object.traverse( function ( child ) {
-
+			//add obj
 			if ( child.geometry !== undefined ) scope.addGeometry( child.geometry );
 			if ( child.material !== undefined ) scope.addMaterial( child.material );
 

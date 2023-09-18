@@ -19,3 +19,8 @@ describe('ThreeJSComponent', () => {
     expect(component).toBeTruthy();
   });
 });
+
+//In summary, this code sets up a test suite for the ThreeJSComponent using Angular's testing utilities. 
+//It creates a fixture for the component, retrieves the component instance, 
+//and then runs a simple test case to ensure that the component is successfully created. 
+//This is a basic example of how Angular unit tests are structured.

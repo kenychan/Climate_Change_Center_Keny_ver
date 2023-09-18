@@ -12,6 +12,16 @@ import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader';
 import { CollectionData } from '../services/journey.service';
 import { ViewType } from '../journey.component';
 import { Observable, combineLatest } from 'rxjs';
+import { Editor } from './js/Editor.js';
+import { Viewport } from './js/Viewport.js';
+import { Toolbar } from './js/Toolbar.js';
+import { Script } from './js/Script.js';
+import { Player } from './js/Player.js';
+import { Sidebar } from './js/Sidebar.js';
+import { Menubar } from './js/Menubar.js';
+import { Resizer } from './js/Resizer.js';
+import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
+import { Raycaster, Vector2 } from 'three';
 
 // Interface representing a single city tile
 interface CityTile {
@@ -31,6 +41,15 @@ export class ThreeJSComponent {
   private renderer: THREE.WebGLRenderer;
   private controls: OrbitControls;
   private loadedDatapoints: THREE.Mesh[];
+  //transformation components
+  private transformControl: TransformControls;
+  private raycaster: Raycaster;
+  private mouse: Vector2;
+  private selectedObject: THREE.Mesh | null = null;
+  private offset: THREE.Vector3 | null = null;
+  private isDragging = false;
+  private SELECTION_LAYER: any;
+
   // Window properties
   private windowWidth = 960 * 1.2;
   private windowHeight = 451 * 1.2;
@@ -38,7 +57,7 @@ export class ThreeJSComponent {
   private renderingStopped = true;
   private objectsLoaded = false;
 
-  @Input({ required: true }) collectionsData!: Observable<CollectionData>[];
+  @Input({ required: true }) collectionsData!: Observable<CollectionData>[];//get data
   @Input({ required: true }) viewType!: ViewType;
 
   @ViewChild('renderContainer', { static: false }) container!: ElementRef;
@@ -70,9 +89,33 @@ export class ThreeJSComponent {
     this.controls.update();
     // Datapoints
     this.loadedDatapoints = [];
+
+    //set transformControl
+    this.raycaster = new Raycaster();
+    this.mouse = new Vector2();
+
+    this.transformControl = new TransformControls( this.camera, this.renderer.domElement );
+    this.transformControl.setMode("translate"); //also scale,rotate
+    this.scene.add(this.transformControl);
+    // Add event listener for 'dragging-changed' event
+    this.transformControl.addEventListener('dragging-changed', (event: { [key: string]: any }) => {
+      this.controls.enabled = !event['value']; // Access 'this.controls' directly
+    });
+
+
   }
 
+
+    // Ensure the controls and transformControl are disposed when the component is destroyed
+
+  ngOnDestroy() {
+    this.controls.dispose();
+    this.transformControl.dispose();
+  }
+
+
   ngOnChanges(changes: SimpleChanges) {
+    
     // Remove old datapoints
     this.loadedDatapoints.forEach(() => {
       const objMesh = this.scene.getObjectByName('meshName');
@@ -89,7 +132,7 @@ export class ThreeJSComponent {
             new THREE.MeshBasicMaterial({ color: collection.color })
           );
           datapointMesh.name = 'meshName';
-          datapointMesh.scale.copy(new THREE.Vector3(1.5, 0.1, 1.5));
+          datapointMesh.scale.copy(new THREE.Vector3(10, 50, 10));
           // Convert the coordinates
           const sceneCoordinates = this.convertCoordinates(
             datapoint.content.location!.coordinates[0],
@@ -101,7 +144,7 @@ export class ThreeJSComponent {
             -20,
             sceneCoordinates.z
           );
-          // Copy the mesh and create the beam
+          // Copy the mesh and create the beam, beam and mesh are separated.
           const beam = new THREE.Mesh().copy(datapointMesh);
           beam.scale.copy(new THREE.Vector3(0.2, 300, 0.2));
           beam.material = new THREE.MeshBasicMaterial({
@@ -113,12 +156,27 @@ export class ThreeJSComponent {
           this.scene.add(datapointMesh);
           this.scene.add(beam);
           this.loadedDatapoints.push(datapointMesh);
-          this.loadedDatapoints.push(beam);
+          
+          //this.loadedDatapoints.push(beam);
+
+
+      
         });
+
+            // Attach the datapointMesh to the transformControl
+    
+          
+        
       })
+
+      
     );
+      // Attach the datapointMesh to the transformControl
+      
   }
 
+
+  
   /**
    * Loads the renderer and starts the render() function.
    */
@@ -134,6 +192,10 @@ export class ThreeJSComponent {
       ]);
       this.objectsLoaded = true;
     }
+
+
+
+
     // Resize renderer window
     if (this.viewType === 'no-map') {
       this.windowWidth = this.container.nativeElement.clientWidth;
@@ -225,7 +287,7 @@ export class ThreeJSComponent {
               mesh.geometry.center();
               mesh.translateZ(210);
               mesh.position.copy(tile.scenePosition);
-              sc.add(mesh);
+              //sc.add(mesh);
               this.hideLoadingDiv();
             }
           );

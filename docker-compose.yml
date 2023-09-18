@@ -1,0 +1,57 @@
+version: "3.8"
+services:
+  # Frontend container
+  angular-frontend:
+    build:
+      context: ./
+      dockerfile: ./frontend/Dockerfile
+    container_name: angular-frontend
+    ports:
+      - "${ANGULAR_FRONTEND_PORT}:${ANGULAR_FRONTEND_PORT}"
+
+  # Main backend container
+  express-backend:
+    build:
+      context: ./
+      dockerfile: ./backend/public-api/server.Dockerfile
+    container_name: express-backend
+    environment:
+      - HOST=${EXPRESS_BACKEND_HOST}
+      - PORT=${EXPRESS_BACKEND_PORT}
+      - PYTHON_BACKEND_HOST=${PYTHON_BACKEND_HOST}
+      - PYTHON_BACKEND_PORT=${PYTHON_BACKEND_PORT}
+      - MONGODB_URL=${MONGODB_URL}
+      - DISABLE_SWAGGER_AUTH=${DISABLE_SWAGGER_AUTH}
+    ports:
+      - "${EXPRESS_BACKEND_PORT}:${EXPRESS_BACKEND_PORT}"
+    depends_on:
+      - mongodb
+    restart: always
+
+    # Data-science backend container
+  python-backend:
+    build:
+      context: ./
+      dockerfile: ./backend/data-science/Dockerfile
+    container_name: python-backend
+    environment:
+      - HOST=${PYTHON_BACKEND_HOST}
+      - PORT=${PYTHON_BACKEND_PORT}
+    ports:
+      - "${PYTHON_BACKEND_PORT}:${PYTHON_BACKEND_PORT}"
+    restart: always
+
+  # Database container
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    expose:
+      - ${MONGODB_PORT}
+    ports:
+      - "${MONGODB_PORT}:${MONGODB_PORT}"
+    volumes:
+      - mongodb_data_container:/data/db
+
+# Keeps the MongoDB data consistent between shutdowns
+volumes:
+  mongodb_data_container:

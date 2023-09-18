@@ -1,0 +1,8 @@
+*/build
+*/dist
+*/node_modules
+*/npm-debug.log
+.git
+*/coverage
+*/__pycache__
+*/terraform*

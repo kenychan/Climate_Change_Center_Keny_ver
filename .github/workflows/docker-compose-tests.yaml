@@ -1,0 +1,36 @@
+name: Docker-Compose
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+      - "frontend/**"
+
+jobs:
+  DockerComposeTest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Execute Docker Compose
+        run: docker-compose up -d
+
+      - name: Run Health Check public API
+        run: ./.github/scripts/health_check.sh
+        env:
+          ROUTE: http://localhost:40000/health
+
+      - name: Run Health Check python API
+        run: ./.github/scripts/health_check.sh
+        env:
+          ROUTE: http://localhost:50000/health
+
+      - name: Stop and clean up services
+        run: docker-compose down

@@ -1,0 +1,48 @@
+<mat-expansion-panel [expanded]="triggerExpandSubject | async" (afterCollapse)="afterCollapse()">
+  <mat-expansion-panel-header
+    [class.selected]="isSelected$ | async"
+    [style.background]="color"
+  >
+    <div class="header">
+      <div class="header-title" (click)="$event.stopImmediatePropagation()">
+        <mat-checkbox
+          [checked]="isAllSelected$ | async"
+          [indeterminate]="isOneSelected$ | async"
+          (change)="selectCollectionFiles($event)"
+          ><div>
+            {{ collection.title }}
+          </div></mat-checkbox
+        >
+        <div class="edit-button">
+          <button mat-icon-button (click)="editTitle()">
+            <mat-icon fontIcon="edit"></mat-icon>
+          </button>
+        </div>
+        <div class="edit-button">
+          <button mat-icon-button (click)="deleteCollection()">
+            <mat-icon fontIcon="delete"></mat-icon>
+          </button>
+        </div>
+      </div>
+      <button
+        mat-button
+        [disabled]="isSelected$ | async"
+        (click)="selectCollection(); $event.stopPropagation()"
+      >
+        {{ "collection.show-filters" | translate }}
+        <mat-icon
+          [fontIcon]="!(isSelected$ | async) ? 'visibility_off' : 'visibility'"
+        ></mat-icon>
+      </button>
+    </div>
+  </mat-expansion-panel-header>
+  <div>
+    <app-data-file-list-entry
+      *ngFor="let file of dataFiles.results"
+      [file]="file"
+    ></app-data-file-list-entry>
+    <div class="no-data" *ngIf="dataFiles.results.length == 0">
+      {{ "collection.no-data" | translate }}
+    </div>
+  </div>
+</mat-expansion-panel>

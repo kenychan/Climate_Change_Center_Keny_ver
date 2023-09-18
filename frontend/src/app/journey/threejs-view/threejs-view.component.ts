@@ -1,3 +1,8 @@
+
+
+
+
+
 import {
   Component,
   Input,
@@ -12,14 +17,6 @@ import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader';
 import { CollectionData } from '../services/journey.service';
 import { ViewType } from '../journey.component';
 import { Observable, combineLatest } from 'rxjs';
-import { Editor } from './js/Editor.js';
-import { Viewport } from './js/Viewport.js';
-import { Toolbar } from './js/Toolbar.js';
-import { Script } from './js/Script.js';
-import { Player } from './js/Player.js';
-import { Sidebar } from './js/Sidebar.js';
-import { Menubar } from './js/Menubar.js';
-import { Resizer } from './js/Resizer.js';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import { Raycaster, Vector2 } from 'three';
 
@@ -46,9 +43,15 @@ export class ThreeJSComponent {
   private raycaster: Raycaster;
   private mouse: Vector2;
   private selectedObject: THREE.Mesh | null = null;
-  private offset: THREE.Vector3 | null = null;
-  private isDragging = false;
-  private SELECTION_LAYER: any;
+  
+  private selectionChangedEvent = new CustomEvent<{ lastSelected: THREE.Object3D | null, newSelected: THREE.Object3D | null }>("selectionChanged", {
+    detail: { lastSelected: null, newSelected: null },
+  });
+
+  private pointer = new THREE.Vector2();
+
+
+
 
   // Window properties
   private windowWidth = 960 * 1.2;
@@ -106,6 +109,43 @@ export class ThreeJSComponent {
   }
 
 
+  private onPointerMove(event: MouseEvent) {
+    this.pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+    this.pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
+  }
+
+  private onPointerDown(event: MouseEvent) {
+    this.raycaster.setFromCamera(this.pointer, this.camera);
+    const intersects = this.raycaster.intersectObjects(this.scene.children);
+
+    if (intersects.length > 0) {
+      const intersectedObject = intersects[0].object as THREE.Mesh;
+      if (intersectedObject !== this.selectedObject) {
+        this.selectionChangedEvent.detail.lastSelected = this.selectedObject;
+        this.selectedObject = intersectedObject;
+        this.selectionChangedEvent.detail.newSelected = this.selectedObject;
+        window.dispatchEvent(this.selectionChangedEvent);
+      }
+    } else {
+      if (this.selectedObject !== null) {
+        this.selectionChangedEvent.detail.lastSelected = this.selectedObject;
+        this.selectedObject = null;
+        this.selectionChangedEvent.detail.newSelected = null;
+        window.dispatchEvent(this.selectionChangedEvent);
+      }
+    }
+  }
+
+
+
+  private onSelectionChanged(evt: Event) {
+    const eventDetail = (evt as CustomEvent).detail;
+    console.log("Selection changed:");
+    if (eventDetail.newSelected !== null) {
+      this.transformControl.attach(eventDetail.newSelected);
+    }
+  }
+
     // Ensure the controls and transformControl are disposed when the component is destroyed
 
   ngOnDestroy() {
@@ -158,6 +198,7 @@ export class ThreeJSComponent {
           this.loadedDatapoints.push(datapointMesh);
           
           //this.loadedDatapoints.push(beam);
+            this.transformControl.attach(datapointMesh);
 
 
       
@@ -296,3 +337,4 @@ export class ThreeJSComponent {
     });
   }
 }
+

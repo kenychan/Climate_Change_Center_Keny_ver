@@ -15,7 +15,7 @@ import { DataFileListEntryComponent } from './data-file-list-entry/data-file-lis
 import { GalleryViewComponent } from './gallery-view/gallery-view.component';
 import { JourneyComponent } from './journey.component';
 import { JourneyRoutingModule } from './journey.routing-module';
-import { ThreeJSComponent } from './threejs-view/ThreeJSComponent';
+import { ThreeJSComponent } from './threejs-view/threejs-view.component';
 
 // Factory function for TranslateHttpLoader
 export function HttpLoaderFactory(http: HttpClient) {

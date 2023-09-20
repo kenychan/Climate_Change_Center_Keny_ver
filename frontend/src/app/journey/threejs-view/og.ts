@@ -9,7 +9,7 @@ import {
   SimpleChanges,
   ViewChild,
   ElementRef,
-  HostListener,Renderer2, OnInit,OnDestroy,NgZone,
+  HostListener,Renderer2, OnInit,OnDestroy,NgZone
 } from '@angular/core';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
@@ -38,7 +38,7 @@ export class ThreeJSComponent {
   private camera: THREE.Camera;
   private renderer=new THREE.WebGLRenderer();
   private controls: OrbitControls;
-  private loadedDatapoints_andMesh: THREE.Mesh[];
+  private loadedDatapoints: THREE.Mesh[];
   //transformation components
   private transformControl: TransformControls;
 
@@ -97,13 +97,32 @@ export class ThreeJSComponent {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.update();
     // Datapoints
-    this.loadedDatapoints_andMesh = [];
+    this.loadedDatapoints = [];
+
+
+      // add test geometry
+
+
+    let cube, sphere, selectedObject, objGroup;
+      objGroup = new THREE.Group();
+      objGroup.name = "Object Group";
+  
+      cube = new THREE.Mesh( new THREE.BoxGeometry( 1, 1, 1 ), this.material_test );
+      cube.name = "Cube";
+      sphere = new THREE.Mesh( new THREE.SphereGeometry(1, 32, 16 ), this.material_test );
+      sphere.position.set(0, 5, 0);
+      sphere.name = "Sphere";
+  
+      objGroup.add( cube );
+      objGroup.add( sphere );
+  
+      this.scene.add(objGroup);
 
     //set transformControl
    
 
     this.transformControl = new TransformControls( this.camera, this.renderer.domElement );
-    this.transformControl.setMode("translate"); //also scale,rotate
+    this.transformControl.setMode("scale"); //also scale,rotate
     this.scene.add(this.transformControl);
     // Add event listener for 'dragging-changed' event
     this.transformControl.addEventListener('dragging-changed', (event: { [key: string]: any }) => {
@@ -129,6 +148,7 @@ export class ThreeJSComponent {
 
 
 
+
   onCanvasClick(event: MouseEvent): void {
 
     // event.clientXY are not corresponding to the container, 
@@ -144,19 +164,15 @@ export class ThreeJSComponent {
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(mouse, this.camera);
 
-
+    const intersects = raycaster.intersectObjects(this.scene.children, true);
     console.log("mouse",event.clientX ,event.clientY,this.windowWidth,this.windowHeight,mouse);
     //https://stackoverflow.com/questions/51024450/click-object-in-three-js-with-angular
 
-
-
-    const intersects = raycaster.intersectObjects(this.loadedDatapoints_andMesh, true);
-    //*************SOLVES THE PROBLEM */
-    //https://stackoverflow.com/questions/24453821/three-js-raycaster-not-detecting-scene-mesh
-    //Has to save all the meshes into a mesh array, and then let raycaster selecr from the array
-    console.log("intersects select",intersects[0].object.position,intersects[0].point);    
+    console.log("intersects select",intersects[0].object.position,intersects[0].point);
+    
      // COLOR SELECTION
-    const material_select = new THREE.MeshBasicMaterial({ color: 0xff0000 }); 
+    const material = new THREE.MeshBasicMaterial({ color: 0xff0000 }); 
+    ((intersects[ 0 ].object)as THREE.Mesh).material=material;
 
     /**for ( let i = 1; i < intersects.length; i ++ ) {
 
@@ -166,38 +182,19 @@ export class ThreeJSComponent {
     
     //when click a point, raycaster will cast a ray in z axis to your screen,
     // so the closest object to your screen will be saved in intersects[0], which is what you want to select
-
-
     if (intersects.length > 0) {
-      const clickedObject = intersects[0].object as THREE.Mesh; // Cast to Mesh
-      if (this.selectedObject !== clickedObject) {
-        // Deselect the previously selected object.
-        if (this.selectedObject) {
-          this.transformControl.detach();
-        }
+      this.clickedObject = intersects[0].object as THREE.Mesh; //Get the first intersection
+      this.selectedObject = this.clickedObject;
+      console.log("selected object",intersects[0].object.name);
 
-        // Select the clicked object.
-        this.selectedObject = clickedObject;
-        this.transformControl.attach(this.selectedObject);
-        this.selectedObject.material=material_select;//set color to selected object
-
-
-      } else {
-        // Deselect when clicking on the already selected object.
-        this.transformControl.detach();
-        this.selectedObject = null;
-
-      }
-    } else {
-      // Deselect when clicking on empty space.
-      if (this.selectedObject) {
-        this.transformControl.detach();
-        this.selectedObject = null;
-
-      }
+      // Attach TransformControls to the selected object.
+    
+      this.transformControl.attach(this.selectedObject);
+      
     }
+    
+    
   }
-
 
 
     // Ensure the controls and transformControl are disposed when the component is destroyed
@@ -209,18 +206,14 @@ export class ThreeJSComponent {
   }
 
 
-  Datapoint_refresh() {
-
-  // Clear the objects from the scene
-  this.loadedDatapoints_andMesh.forEach((datapointMesh) => {
-    if (datapointMesh.name === 'meshName') {
-      this.scene.remove(datapointMesh);
-    }
-  });//(datapointMesh) is an arbitrary parameter name that you've chosen to represent
-  // each item in the loadedDatapoints_andMesh array as you iterate through it.
-
-
-    this.loadedDatapoints_andMesh.length = 0;
+  ngOnChanges(changes: SimpleChanges) {
+    
+    // Remove old datapoints
+    this.loadedDatapoints.forEach(() => {
+      const objMesh = this.scene.getObjectByName('meshName');
+      this.scene.remove(objMesh!);
+    });
+    this.loadedDatapoints = [];
     // Create new ones
     combineLatest(this.collectionsData).subscribe((collectionsData) =>
       collectionsData.forEach((collection) => {
@@ -254,10 +247,10 @@ export class ThreeJSComponent {
           // Add the objects to the scene and array
           this.scene.add(datapointMesh);
           this.scene.add(beam);
-          this.loadedDatapoints_andMesh.push(datapointMesh);
+          this.loadedDatapoints.push(datapointMesh);
           
-          this.loadedDatapoints_andMesh.push(beam);
- 
+          this.loadedDatapoints.push(beam);
+
       
         });
     
@@ -267,31 +260,10 @@ export class ThreeJSComponent {
 
       
     );
-    
       
   }
 
 
-
-  addCustomMesh(){
-               // add test geometry, put here alone to avoid duplicates. 
-
-
-               let cube, sphere, selectedObject;
-           
- 
-               cube = new THREE.Mesh( new THREE.BoxGeometry( 1, 1, 1 ), this.material_test );
-               sphere = new THREE.Mesh( new THREE.SphereGeometry(1, 32, 16 ), this.material_test );
-               sphere.position.set(0, 5, 0);
-               cube.name=("meshName");//so that Datapoint_refresh will delete the old ones as well 
-               sphere.name=("meshName");
-
-               this.scene.add( cube );
-               this.scene.add( sphere );
-     
-               this.loadedDatapoints_andMesh.push(cube);
-               this.loadedDatapoints_andMesh.push(sphere);
-  }
   
   /**
    * Loads the renderer and starts the render() function.
@@ -307,13 +279,11 @@ export class ThreeJSComponent {
         { name: 'tile3', scenePosition: new THREE.Vector3(-205, -2.0, -4.5) },
       ]);
       this.objectsLoaded = true;
-      
     }
-    //call to initialzed and refresh datapoints
-    this.Datapoint_refresh();
-    // Resize renderer window
-    this.addCustomMesh();
 
+   
+    // Resize renderer window
+    
     if (this.viewType === 'no-map') {
       this.windowWidth = this.container.nativeElement.clientWidth;
       this.windowHeight = (this.windowWidth / 21) * 9;
@@ -327,7 +297,7 @@ export class ThreeJSComponent {
 
     console.log('window size: ',this.windowWidth,this.windowHeight);
 
-    
+
     // Append renderer
     const container = document.querySelector('.threejs-renderer');
     container!.appendChild(this.renderer.domElement);
@@ -410,7 +380,7 @@ export class ThreeJSComponent {
               mesh.geometry.center();
               mesh.translateZ(210);
               mesh.position.copy(tile.scenePosition);
-              sc.add(mesh);
+              //sc.add(mesh);
               this.hideLoadingDiv();
             }
           );

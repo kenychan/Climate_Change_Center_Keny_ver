@@ -19,7 +19,8 @@ import { CollectionData } from '../services/journey.service';
 import { ViewType } from '../journey.component';
 import { Observable, combineLatest } from 'rxjs';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
-import { Raycaster, Vector2 } from 'three';
+import { GUI } from 'dat.gui'
+import { F } from '@angular/cdk/keycodes';
 
 // Interface representing a single city tile
 interface CityTile {
@@ -51,7 +52,8 @@ export class ThreeJSComponent {
   private clickedObject: THREE.Mesh;
   private material_test = new THREE.MeshStandardMaterial( { color: 0x000000 } );
 
-
+  private object_group = new THREE.Group();
+  private gui:  GUI;
 
 
   // Window properties
@@ -77,7 +79,7 @@ export class ThreeJSComponent {
     console.log("ssss",this.windowWidth,this.windowHeight);
 
     // Scene
-    this.scene = new THREE.Scene();
+    this.scene= new THREE.Scene();
     this.scene.background = new THREE.Color(0xffffff);
     // Add light
     const light = new THREE.AmbientLight(0xffffff, 1.2);
@@ -110,8 +112,6 @@ export class ThreeJSComponent {
       this.controls.enabled = !event['value']; // Access 'this.controls' directly
     });
 
-    //this.transformControl.attach(cube);
- 
     
 
   }
@@ -124,6 +124,7 @@ export class ThreeJSComponent {
         this.onCanvasClick(event);
       });
     });
+        
 
   }
 
@@ -252,12 +253,12 @@ export class ThreeJSComponent {
             transparent: true,
           });
           // Add the objects to the scene and array
-          this.scene.add(datapointMesh);
-          this.scene.add(beam);
+    
           this.loadedDatapoints_andMesh.push(datapointMesh);
           
           this.loadedDatapoints_andMesh.push(beam);
  
+
       
         });
     
@@ -286,8 +287,7 @@ export class ThreeJSComponent {
                cube.name=("meshName");//so that Datapoint_refresh will delete the old ones as well 
                sphere.name=("meshName");
 
-               this.scene.add( cube );
-               this.scene.add( sphere );
+             
      
                this.loadedDatapoints_andMesh.push(cube);
                this.loadedDatapoints_andMesh.push(sphere);
@@ -307,18 +307,22 @@ export class ThreeJSComponent {
         { name: 'tile3', scenePosition: new THREE.Vector3(-205, -2.0, -4.5) },
       ]);
       this.objectsLoaded = true;
-      
+
     }
     //call to initialzed and refresh datapoints
     this.Datapoint_refresh();
     // Resize renderer window
     this.addCustomMesh();
 
+   
+
+
     if (this.viewType === 'no-map') {
       this.windowWidth = this.container.nativeElement.clientWidth;
       this.windowHeight = (this.windowWidth / 21) * 9;
       this.renderer.setSize(this.windowWidth, this.windowHeight);
       console.log('View!');
+      
     } else {
       this.windowWidth = this.container.nativeElement.clientWidth;
       this.windowHeight = (this.windowWidth / 16) * 9;
@@ -327,12 +331,22 @@ export class ThreeJSComponent {
 
     console.log('window size: ',this.windowWidth,this.windowHeight);
 
-    
+
+
+    this.MeshArray_toGroup();//group every mesh except the map and add to scene, 
+    //this is also better for later downloading wo the map, otherwise file is too big 
+    //and will cause exception
+
     // Append renderer
     const container = document.querySelector('.threejs-renderer');
     container!.appendChild(this.renderer.domElement);
     this.renderingStopped = false;
     this.render();
+ 
+
+
+ 
+
   }
 
   /**
@@ -355,6 +369,7 @@ export class ThreeJSComponent {
    */
   unloadRenderer() {
     this.renderingStopped = true;
+
   }
 
   /**
@@ -393,6 +408,7 @@ export class ThreeJSComponent {
    * @param tiles
    */
   loadTiles(tiles: CityTile[]) {
+    
     tiles.forEach((tile) => {
       const objLoader2 = new OBJLoader();
       const mtlLoader2 = new MTLLoader();
@@ -418,6 +434,71 @@ export class ThreeJSComponent {
       );
     });
   }
+
+
+  //convert Mesh array to group for download
+  MeshArray_toGroup(){
+    // Add each mesh from the array to the group
+    this.loadedDatapoints_andMesh.forEach((mesh) => {
+      this.object_group.add(mesh);
+  });
+  this.scene.add(this.object_group);
+  }
+
+  //GUI
+  Add_gui(){
+
+    
+  
+
+    //remove old
+    if (this.gui) {
+      this.gui.destroy();
+    }
+
+    this.gui = new GUI();
+        const button = { 
+          save: () => this.save(this.object_group) // Pass a reference to the save function
+        };
+
+        this.gui.add(button, 'save').onChange((value) => {
+          // Get the dat.gui container element and add the CSS class
+          
+        const guiContainer = this.gui.domElement;
+        const container = document.getElementById('UI');
+        container!.appendChild(guiContainer);});
+
+    
+  }
+
+
+
+
+  
+  //download JSON
+  download(content: BlobPart, fileName: string, contentType: any) {
+    var a = document.createElement("a");
+    var file = new Blob([content], {type: contentType});
+    a.href = URL.createObjectURL(file);
+    a.download = fileName;
+    a.click();
+    a.remove();    
+
+    }
+  //save scene to JSON
+  save(object_group:THREE.Group){
+
+    const result = object_group.toJSON();
+
+    const output =JSON.stringify(result);
+    console.log("saved");
+
+    this.download(output, 'CCC_scene.json', 'application/json')
+    }
+
+
+
+
 }
 
 

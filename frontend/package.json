@@ -26,6 +26,7 @@
     "@types/geojson": "^7946.0.10",
     "bootstrap": "^5.2.3",
     "chart.js": "^4.3.0",
+    "dat.gui": "0.7.9",
     "fire": "^0.55.1",
     "firebase": "^9.23.0",
     "json-viewer": "^2.2.0",
@@ -44,6 +45,7 @@
     "@angular-devkit/build-angular": "^16.0.1",
     "@angular/cli": "~16.0.1",
     "@angular/compiler-cli": "^16.0.0",
+    "@types/dat.gui": "^0.7.10",
     "@types/jasmine": "~4.3.0",
     "@types/three": "^0.154.0",
     "jasmine-core": "~4.6.0",
@@ -53,7 +55,5 @@
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.0.0",
     "typescript": "~5.0.2"
-
-    
   }
 }

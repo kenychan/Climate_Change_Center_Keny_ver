@@ -17,10 +17,24 @@ import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader';
 import { CollectionData } from '../services/journey.service';
 import { ViewType } from '../journey.component';
-import { Observable, combineLatest } from 'rxjs';
+import { BehaviorSubject, Observable, combineLatest,catchError, ReplaySubject, finalize, of } from 'rxjs';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import { GUI } from 'dat.gui'
-import { F } from '@angular/cdk/keycodes';
+import { CSS3DRenderer, CSS3DObject } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
+import {
+  MediaType,
+  DataType,
+  NotRef,
+  Ref,
+  Datafile,
+  JsonObject,
+} from '../../../../../common/types/datafile';
+import { ApiService } from '../../shared/service/api.service';
+import { NoFileUploadComponent } from 'src/app/upload-data/no-file/no-file.component';
+import { HttpErrorResponse } from '@angular/common/http';
+import { NotificationService } from 'src/app/notification.service';
+import { SupportedDatasetFileTypes } from '../../../../../common/types/supportedFileTypes';
+import { and } from './Editor/examples/jsm/nodes/Nodes';
 
 // Interface representing a single city tile
 interface CityTile {
@@ -45,11 +59,7 @@ export class ThreeJSComponent {
 
   private selectedObject: THREE.Mesh | null = null;
   
-  private selectionChangedEvent = new CustomEvent<{ lastSelected: THREE.Object3D | null, newSelected: THREE.Object3D | null }>("selectionChanged", {
-    detail: { lastSelected: null, newSelected: null },
-  });
 
-  private clickedObject: THREE.Mesh;
   private material_test = new THREE.MeshStandardMaterial( { color: 0x000000 } );
 
   private object_group = new THREE.Group();
@@ -62,6 +72,16 @@ export class ThreeJSComponent {
   // Toggle parameters
   private renderingStopped = true;
   private objectsLoaded = false;
+  private Youtube_renderer = new CSS3DRenderer();
+
+  private notificationService: NotificationService;
+  private UserUploadedScene:boolean;
+  private userScene:THREE.Object3D;
+  localData$?: Observable<any>;
+
+  /**
+   * State of the Journey.
+   */
 
   @Input({ required: true }) collectionsData!: Observable<CollectionData>[];//get data
   @Input({ required: true }) viewType!: ViewType;
@@ -72,11 +92,10 @@ export class ThreeJSComponent {
 
 
 
-  constructor(private renderer2: Renderer2,private ngZone: NgZone) {
+  constructor(private renderer2: Renderer2,private ngZone: NgZone,private apiService: ApiService) {
     this.windowWidth=this.renderer.domElement.width;
     this.windowHeight=this.renderer.domElement.height;
 
-    console.log("ssss",this.windowWidth,this.windowHeight);
 
     // Scene
     this.scene= new THREE.Scene();
@@ -91,7 +110,7 @@ export class ThreeJSComponent {
       0.1,
       1000000
     );
-    this.camera.position.z = 5;
+    this.camera.position.z = 90;
     // Renderer
 
     this.renderer.setSize(this.windowWidth, this.windowHeight);
@@ -105,16 +124,200 @@ export class ThreeJSComponent {
    
 
     this.transformControl = new TransformControls( this.camera, this.renderer.domElement );
+  
+
     this.transformControl.setMode("translate"); //also scale,rotate
     this.scene.add(this.transformControl);
+
     // Add event listener for 'dragging-changed' event
     this.transformControl.addEventListener('dragging-changed', (event: { [key: string]: any }) => {
       this.controls.enabled = !event['value']; // Access 'this.controls' directly
     });
-
     
+   //this.UpdateCoordinates("651062f30e58680ea8b8b6fc",0,0,0);
 
   }
+
+
+   extractYouTubeVideoId(url: string): string | null {
+    // Regular expressions to match YouTube video IDs
+    const regexLong = /(?:\?v=|&v=|youtu\.be\/|\/embed\/|\/v\/|\/e\/|watch\?v=)([a-zA-Z0-9_-]{11})/;
+    const regexShort = /^([a-zA-Z0-9_-]{11})$/;
+  
+    // Check for a match using the long regex
+    const matchLong = url.match(regexLong);
+  
+    // If there's a match with the long regex, return the video ID
+    if (matchLong) {
+      return matchLong[1];
+    }
+  
+    // If there's no match with the long regex, check for a match with the short regex
+    const matchShort = url.match(regexShort);
+  
+    // If there's a match with the short regex, return the video ID
+    if (matchShort) {
+      return matchShort[1];
+    }
+  
+    // If no match is found, return null
+    return null;
+  }
+
+
+    Youtube ( id:string, x:number, y:number, z:number ) {
+    var div = document.createElement( 'div' );
+    div.style.width = '480px';
+    div.style.height = '360px';
+    div.style.backgroundColor = '#000';
+    var iframe = document.createElement( 'iframe' );
+    iframe.style.width = '480px';
+    iframe.style.height = '360px';
+    iframe.style.border = '0px';
+    iframe.src = [ 'https://www.youtube.com/embed/', id, '?rel=0&autoplay=1&mute=1' ].join( '' );
+    div.appendChild( iframe );
+    var object = new CSS3DObject( div );
+    object.position.set( x, y, z );
+
+    return object;
+  };
+
+  Add_youtube(){
+  
+				const container = document.querySelector('.threejs-renderer');
+        this.Youtube_renderer.setSize( this.windowWidth, this.windowHeight );
+        this.Youtube_renderer.domElement.style.position = 'absolute';
+        this.Youtube_renderer.domElement.style.top = '0px';
+        container!.appendChild(this.Youtube_renderer.domElement);
+    
+        const youtube1=this.Youtube( 'TlLijkYQjlw', 0, 0, -500 );
+        const youtube2=this.Youtube( 'KuGI0H_T0bw', 0, 300, -500 ) 
+        console.log("youtube initialized;",youtube1,youtube2 )
+    
+        this.object_group.add(youtube1);
+        this.object_group.add(youtube2);
+        
+        // Block iframe events when dragging camera
+    
+        const blocker = document.getElementById( 'Pause_video' );
+        blocker!.style.display = 'none';
+    
+        document.addEventListener( 'mousedown', function () {
+    
+          blocker!.style.display = '';
+    
+        } );
+        document.addEventListener( 'mouseup', function () {
+    
+          blocker!.style.display = 'none';
+    
+        } );
+  }
+
+
+
+
+
+
+  createVideoThumbnailPlane(DataID:string,videoId:string, x:number, y:number, z:number) {
+
+    const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/0.jpg`;
+
+
+
+    const texture = new THREE.TextureLoader().load(thumbnailUrl);
+
+    const geometry = new THREE.PlaneGeometry(32, 18); // Assuming 16:9 aspect ratio
+    const material = new THREE.MeshBasicMaterial({ map: texture });
+    const plane = new THREE.Mesh(geometry, material);
+    plane.name="Youtube_"+DataID;    
+    plane.position.set(x,y+20,z); //y and z are somehow swapped
+    this.loadedDatapoints_andMesh.push(plane);
+}
+
+
+
+NoFileModification(rawdata:Datafile,lon:number,lat:number) {
+  if (rawdata.content.location) { // Check if rawdata.location is defined
+    if (rawdata.content.location.coordinates) { // Check if rawdata.location.coordinates is defined
+      rawdata.content.location.coordinates[0] = lon;
+      rawdata.content.location.coordinates[1] = lat;
+    }
+}
+
+let isReferencedData = false;
+if(rawdata.dataType==='REFERENCED'){
+  isReferencedData=true;
+}
+return {
+  title: rawdata.title!,
+  description: rawdata.description,
+  dataType:
+  isReferencedData === true
+      ? DataType.REFERENCED
+      : DataType.NOTREFERENCED,
+  tags: rawdata.tags,
+  dataSet: SupportedDatasetFileTypes.NONE,
+  content: rawdata.content,
+};
+    }
+
+UpdateCoordinates(id:string,x:number,y:number,z:number){
+
+  const lon = this.Reverse_convertCoordinates(x,y,z).lon;
+  const lat = this.Reverse_convertCoordinates(x,y,z).lat;
+
+
+  this.apiService.getDatafile(id!).subscribe(result => {
+    const OGdata = result;
+
+
+    const data = this.NoFileModification(OGdata,lon,lat);
+    console.log("data",data,typeof(data));
+//13.326672,52.5130879
+    
+    this.apiService
+      .updateDatafile(id!, data)
+      .pipe(
+        catchError((err: HttpErrorResponse) => {
+          console.log("invalid data");
+
+          throw err.message;
+
+        })
+      )
+      .subscribe(() => {
+        console.log("updated");
+
+        this.notificationService.showInfo('createUpdateDatafile.creationSuccess');
+
+      });
+    });
+
+}
+
+SaveCoordinatesToDatabase(loadedDatapoints_andMesh:THREE.Mesh[]){
+//13.326672,52.51309605145015
+//13.321436963457137,52.51390016131765
+  loadedDatapoints_andMesh.forEach((datapointMesh) => {
+
+    
+    this.object_group.children.forEach(mesh => {
+      if(datapointMesh.name===mesh.name&&datapointMesh.name!==''){
+
+        console.log("coord:",mesh.name,mesh.position.x,mesh.position.y,mesh.position.z)
+      this.UpdateCoordinates(mesh.name,mesh.position.x,mesh.position.y,mesh.position.z);
+      //datapointMesh.position.set(mesh.position.x,mesh.position.y,mesh.position.z);
+
+     }
+    });
+   
+  });
+  console.log("saved scene coordinates to database!")
+
+
+}
+
 
 
 
@@ -124,7 +327,6 @@ export class ThreeJSComponent {
         this.onCanvasClick(event);
       });
     });
-        
 
   }
 
@@ -210,34 +412,89 @@ export class ThreeJSComponent {
   }
 
 
+
+  removeDuplicatesInArray(arr:THREE.Mesh[]) {
+    const uniqueMap = new Map();
+  
+    for (const item of arr) {
+      if (!uniqueMap.has(item.name)) {
+        uniqueMap.set(item.name, item);
+      }
+    }
+  
+    const uniqueArray = Array.from(uniqueMap.values());
+    return uniqueArray;
+  }
+
+   removeDuplicatesAndEmptyElements<T>(arr: T[]): T[] {
+    const uniqueSet = new Set<T>();
+    const result: T[] = [];
+  
+    for (const item of arr) {
+      // Check if the item is not empty and not already in the set
+      if (item !== '' && item !== undefined && !uniqueSet.has(item)) {
+        uniqueSet.add(item);
+        result.push(item);
+      }
+    }
+  
+    return result;
+  }
+
+   removeStringFromArray(arr: string[], target: string): string[] {
+    return arr.filter((item) => item !== target);
+  }
+
   Datapoint_refresh() {
 
   // Clear the objects from the scene
   this.loadedDatapoints_andMesh.forEach((datapointMesh) => {
-    if (datapointMesh.name === 'meshName') {
-      this.scene.remove(datapointMesh);
-    }
-  });//(datapointMesh) is an arbitrary parameter name that you've chosen to represent
+    
+    this.object_group.remove(datapointMesh);
+    
+  });
+  //(datapointMesh) is an arbitrary parameter name that you've chosen to represent
   // each item in the loadedDatapoints_andMesh array as you iterate through it.
 
 
     this.loadedDatapoints_andMesh.length = 0;
-    // Create new ones
+
+    //Add new transfor control when data is refreshed
+    this.transformControl= new TransformControls( this.camera, this.renderer.domElement );
+    this.transformControl.setMode("translate"); //also scale,rotate
+    this.scene.add(this.transformControl);
+    this.transformControl.addEventListener('dragging-changed', (event: { [key: string]: any }) => {
+      this.controls.enabled = !event['value']; // Access 'this.controls' directly
+    });
+
+    // Create new ones when it's reading from database
+    if (this.UserUploadedScene==false){
     combineLatest(this.collectionsData).subscribe((collectionsData) =>
       collectionsData.forEach((collection) => {
         collection.files.results.forEach((datapoint) => {
+          //console.log("GET JSON:",JSON.stringify(datapoint))
           // Create new mesh for each of the datapoints
           const datapointMesh = new THREE.Mesh(
             new THREE.CylinderGeometry(1, 1, 1),
             new THREE.MeshBasicMaterial({ color: collection.color })
           );
-          datapointMesh.name = 'meshName';
+          datapointMesh.name = "Data_mesh_"+datapoint._id!;//set id as name+specification for later convenience
           datapointMesh.scale.copy(new THREE.Vector3(10, 50, 10));
           // Convert the coordinates
           const sceneCoordinates = this.convertCoordinates(
             datapoint.content.location!.coordinates[0],
             datapoint.content.location!.coordinates[1]
           );
+          //if it's refernce data, then create picture of reference
+          if (datapoint.dataType==="REFERENCED"){ //strict compare
+            //video
+            if((datapoint.content as Ref).mediaType==='VIDEO'){
+              const youtubeID = this.extractYouTubeVideoId((datapoint.content as Ref).url);
+            this.createVideoThumbnailPlane(datapoint._id!,youtubeID!,sceneCoordinates.x,0,sceneCoordinates.z);
+            console.log(datapoint );//mediaType is declared under Ref in datafiles.ts
+
+            }
+          }
           // Set the position and add to the scene
           datapointMesh.position.set(
             sceneCoordinates.x,
@@ -245,30 +502,109 @@ export class ThreeJSComponent {
             sceneCoordinates.z
           );
           // Copy the mesh and create the beam, beam and mesh are separated.
+          /*
           const beam = new THREE.Mesh().copy(datapointMesh);
           beam.scale.copy(new THREE.Vector3(0.2, 300, 0.2));
           beam.material = new THREE.MeshBasicMaterial({
             color: collection.color,
             opacity: 0.4,
             transparent: true,
-          });
+          });*/
           // Add the objects to the scene and array
     
           this.loadedDatapoints_andMesh.push(datapointMesh);
           
-          this.loadedDatapoints_andMesh.push(beam);
- 
+          //this.loadedDatapoints_andMesh.push(beam); same name will cause problem in later modification
 
-      
-        });
-    
-          
+       
+        });  
         
       })
-
       
     );
+  
+    this.loadedDatapoints_andMesh=this.removeDuplicatesInArray(this.loadedDatapoints_andMesh);//remove duplicates
+  
+  }
+
+        ///////////////////////////////////////// Create user uploaded scene
+        if (this.UserUploadedScene==true){
+          let nameArr:string[] = [];
+
+          //first add data, then find intersections and modify them by the user defined scene
+          combineLatest(this.collectionsData).subscribe((collectionsData) =>
+          collectionsData.forEach((collection) => {
+            collection.files.results.forEach((datapoint) => {
+              //console.log("GET JSON:",JSON.stringify(datapoint))
+              // Create new mesh for each of the datapoints
+              const datapointMesh = new THREE.Mesh(
+                new THREE.CylinderGeometry(1, 1, 1),
+                new THREE.MeshBasicMaterial({ color: collection.color })
+              );
+              datapointMesh.name = "Data_mesh_"+datapoint._id!;//set id as name+specification for later convenience
+              datapointMesh.scale.copy(new THREE.Vector3(10, 50, 10));
+              // Convert the coordinates
+              const sceneCoordinates = this.convertCoordinates(
+                datapoint.content.location!.coordinates[0],
+                datapoint.content.location!.coordinates[1]
+              );
+              //if it's refernce data, then create picture of reference
+              if (datapoint.dataType==="REFERENCED"){ //strict compare
+                //video
+                if((datapoint.content as Ref).mediaType==='VIDEO'){
+                  const youtubeID = this.extractYouTubeVideoId((datapoint.content as Ref).url);
+                this.createVideoThumbnailPlane(datapoint._id!,youtubeID!,sceneCoordinates.x,0,sceneCoordinates.z);
+                console.log(datapoint );//mediaType is declared under Ref in datafiles.ts
     
+                }
+              }
+              // Set the position and add to the scene
+              datapointMesh.position.set(
+                sceneCoordinates.x,
+                -20,
+                sceneCoordinates.z
+              );
+          
+              this.loadedDatapoints_andMesh.push(datapointMesh);
+              
+              this.loadedDatapoints_andMesh=this.removeDuplicatesInArray(this.loadedDatapoints_andMesh);//remove duplicates
+
+              //Find and modify the intersections
+              this.userScene.traverse((child)=>{
+                nameArr.push(child.name);
+
+                this.loadedDatapoints_andMesh.forEach((item,index) => {
+                  if (child instanceof THREE.Mesh && item.name===child.name ) {
+                    // Clone the Mesh to avoid sharing the same geometry/material
+                    const mesh = child.clone();
+                    this.loadedDatapoints_andMesh[index] = mesh; // Update the array element, cant use item cuz its only a ref
+                    nameArr=this.removeDuplicatesAndEmptyElements(nameArr);
+
+                    nameArr = this.removeStringFromArray( nameArr,child.name);
+
+
+                  }
+                });
+
+              });
+
+            });  
+            
+          })
+          
+        );
+
+            
+            if(nameArr){
+              console.error("Objects:",nameArr," not found in database!")
+
+            }
+
+            console.log("modified scene:",this.loadedDatapoints_andMesh)
+            this.UserUploadedScene=false;
+
+        }
+
       
   }
 
@@ -297,6 +633,8 @@ export class ThreeJSComponent {
    * Loads the renderer and starts the render() function.
    */
   loadRenderer() {
+    this.UserUploadedScene=false; //default 
+
     console.log(this.viewType);
     if (!this.objectsLoaded) {
       // Load city meshes, taken from:
@@ -312,9 +650,9 @@ export class ThreeJSComponent {
     //call to initialzed and refresh datapoints
     this.Datapoint_refresh();
     // Resize renderer window
-    this.addCustomMesh();
+    //this.addCustomMesh(); //Not using it, need to simply the coordinates update
 
-   
+
 
 
     if (this.viewType === 'no-map') {
@@ -336,16 +674,15 @@ export class ThreeJSComponent {
     this.MeshArray_toGroup();//group every mesh except the map and add to scene, 
     //this is also better for later downloading wo the map, otherwise file is too big 
     //and will cause exception
-
     // Append renderer
     const container = document.querySelector('.threejs-renderer');
     container!.appendChild(this.renderer.domElement);
     this.renderingStopped = false;
     this.render();
  
-
-
- 
+    //Add youtube preview, but there's no way to embed this into the scene
+    //this.Add_youtube();
+    this.Add_gui();
 
   }
 
@@ -361,6 +698,7 @@ export class ThreeJSComponent {
 
     // Update the renderer
     this.renderer.render(this.scene, this.camera);
+    //this.Youtube_renderer.render(this.scene, this.camera);
 
   }
 
@@ -368,7 +706,25 @@ export class ThreeJSComponent {
    * Unloads the renderer, stopping future calls for render()
    */
   unloadRenderer() {
+    this.scene.remove(this.transformControl);
+
+    this.transformControl.dispose(); 
+    
+  //remove old transform control when window is off, prevent transform control in the air
+
     this.renderingStopped = true;
+
+
+    //double clean to avoid duplicates when updating collections
+
+  this.loadedDatapoints_andMesh.forEach((datapointMesh) => {
+    
+    this.object_group.remove(datapointMesh);
+    
+  });
+
+    this.loadedDatapoints_andMesh.length = 0;
+
 
   }
 
@@ -403,6 +759,19 @@ export class ThreeJSComponent {
     return { x, y, z };
   }
 
+  Reverse_convertCoordinates(x: number, y: number,z:number) {
+    // Scaling factor, calculated based on the scene size and the long,lat coordinates of the city mesh
+    const scaleFactor = 214 / (13.329418317727734 - 13.32631827581811); // Assuming x-direction corresponds to longitude
+    // The relative origin of the scene. The scene coordinates of (0,0,0) now will correspond to these coordinates in long, lat system.
+    const latitudeOffset = 52.513091975725075;
+    const longitudeOffset = 13.327974301530459;
+    // Conversion formulas
+  
+    const lon = x/scaleFactor+longitudeOffset;
+    const lat = z/scaleFactor+latitudeOffset;
+    return { lon,lat};
+  }
+
   /**
    * Loads the city tiles
    * @param tiles
@@ -426,7 +795,7 @@ export class ThreeJSComponent {
               mesh.geometry.center();
               mesh.translateZ(210);
               mesh.position.copy(tile.scenePosition);
-              sc.add(mesh);
+              //sc.add(mesh);
               this.hideLoadingDiv();
             }
           );
@@ -445,28 +814,41 @@ export class ThreeJSComponent {
   this.scene.add(this.object_group);
   }
 
+
+
+
+  
   //GUI
   Add_gui(){
 
-    
-  
-
     //remove old
-    if (this.gui) {
-      this.gui.destroy();
+    if (!this.gui) {
+      this.gui = new GUI();
     }
+    const ioFolder = this.gui.addFolder("IO");
 
-    this.gui = new GUI();
-        const button = { 
-          save: () => this.save(this.object_group) // Pass a reference to the save function
+        const ioFuncs = { 
+          save: () => {
+            this.object_group.updateMatrixWorld();
+            this.scene.updateMatrixWorld();
+            this.save(this.object_group)}, // Pass a reference to the save function
+          //SaveSceneCoordinates: () =>this.SaveCoordinatesToDatabase(this.loadedDatapoints_andMesh)
         };
 
-        this.gui.add(button, 'save').onChange((value) => {
+        ioFolder.add(ioFuncs, 'save');
+        //ioFolder.add(ioFuncs, 'SaveSceneCoordinates');
+
+        
+        
+        // Create a button in the folder to trigger the file input
+        ioFolder.add({ UploadJSON: () => this.fileinput() }, 'UploadJSON');
+        
+        ioFolder.open();
           // Get the dat.gui container element and add the CSS class
           
         const guiContainer = this.gui.domElement;
         const container = document.getElementById('UI');
-        container!.appendChild(guiContainer);});
+        container!.appendChild(guiContainer);
 
     
   }
@@ -487,6 +869,7 @@ export class ThreeJSComponent {
     }
   //save scene to JSON
   save(object_group:THREE.Group){
+    
 
     const result = object_group.toJSON();
 
@@ -497,6 +880,50 @@ export class ThreeJSComponent {
     }
 
 
+    fileinput(){
+      const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = '.json';
+            fileInput.style.display = 'none';
+            
+            // Add an event listener to handle file selection
+            fileInput.addEventListener('change', (event) => {
+              console.log("loading:")
+    
+              this.UserUploadedScene=true;
+                const file = (event.target as HTMLInputElement).files![0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const jsonContent = e.target?.result as string;
+                        try {
+    
+    
+                          //remove old control
+                            this.scene.remove(this.transformControl);
+    
+                            this.transformControl.dispose(); 
+    
+    
+                            let jsonData = JSON.parse(jsonContent);
+                            // Process the JSON data as needed
+                   
+                            this.userScene= new THREE.ObjectLoader().parse( jsonData );
+                            console.log("loaded:",this.object_group)
+                            // save has duplicates
+                            this.Datapoint_refresh();
+                            this.MeshArray_toGroup();
+                          
+                        } catch (error) {
+                            console.error('Invalid JSON file:', error);
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            });
+    
+            fileInput.click();
+    }
 
 
 }

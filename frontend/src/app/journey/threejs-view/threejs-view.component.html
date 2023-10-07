@@ -1,5 +1,14 @@
 <div class="threejs-renderer" #renderContainer>
   <div id = "UI"> </div>
+  <div id="Pause_video"></div>
 
   <!--    <div class="threejs-loading-text">{{ "threejs.loading" | translate }}</div>  -->
 </div>
+<style>
+  #UI {
+  position: absolute;
+  top: 10px; /* Adjust the top position as needed */
+  right: 10px; /* Adjust the right position as needed */
+  z-index: 1; /* Ensure the dat.GUI container appears above the canvas */
+}
+</style>

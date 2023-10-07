@@ -63,6 +63,7 @@ export class ApiService {
 
   getDatafile(fileId: string) {
     return this.http.get<Datafile>(this.backendUrl + '/datafile/' + fileId);
+    
   }
 
   createDatafile(data: Datafile): Observable<Datafile> {

@@ -180,6 +180,7 @@ export class JourneyService {
    * @returns an Observable which completes with wether the Journey could be successfully loaded
    */
   loadJourney(id: string | null) {
+
     const returnSubject = new ReplaySubject();
     const journeyMock: Journey = {
       title: '',
@@ -493,4 +494,7 @@ export class JourneyService {
       true
     );
   }
+
+
 }
+

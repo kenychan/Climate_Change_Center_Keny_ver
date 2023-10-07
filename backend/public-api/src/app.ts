@@ -30,13 +30,14 @@ class App {
   private initializeMiddleware(): void {
     // Cors (Cross-Origin Resource Sharing)
     const corsOptions = {
-      origin: "*",
+      origin: '*',
     };
 
     this.express.use(cors(corsOptions)); // Apply CORS settings
     this.express.use(morgan("dev")); // Add logging
     this.express.use(compression()); // Add compression
     this.express.use(helmet()); // Add security
+ 
 
     this.express.use(
       urlencoded({

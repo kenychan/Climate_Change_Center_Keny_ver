@@ -20,7 +20,6 @@ import { ViewType } from '../journey.component';
 import { BehaviorSubject, Observable, combineLatest,catchError, ReplaySubject, finalize, of } from 'rxjs';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import { GUI } from 'dat.gui'
-import { CSS3DRenderer, CSS3DObject } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 import {
   MediaType,
   DataType,
@@ -30,11 +29,9 @@ import {
   JsonObject,
 } from '../../../../../common/types/datafile';
 import { ApiService } from '../../shared/service/api.service';
-import { NoFileUploadComponent } from 'src/app/upload-data/no-file/no-file.component';
-import { HttpErrorResponse } from '@angular/common/http';
-import { NotificationService } from 'src/app/notification.service';
-import { SupportedDatasetFileTypes } from '../../../../../common/types/supportedFileTypes';
-import { and } from './Editor/examples/jsm/nodes/Nodes';
+import {YoutubeThumbnail} from './Youtube_thumbnail';
+import { CustomUtilities } from './Custom_ultilities';
+
 
 // Interface representing a single city tile
 interface CityTile {
@@ -42,11 +39,14 @@ interface CityTile {
   scenePosition: THREE.Vector3;
 }
 
+// define angular component 
 @Component({
   selector: 'app-threejs-view',
   templateUrl: './threejs-view.component.html',
   styleUrls: ['./threejs-view.component.scss'],
 })
+
+
 export class ThreeJSComponent {
   // Basic Three.js components
   private scene: THREE.Scene;
@@ -59,9 +59,6 @@ export class ThreeJSComponent {
 
   private selectedObject: THREE.Mesh | null = null;
   
-
-  private material_test = new THREE.MeshStandardMaterial( { color: 0x000000 } );
-
   private object_group = new THREE.Group();
   private gui:  GUI;
 
@@ -72,11 +69,11 @@ export class ThreeJSComponent {
   // Toggle parameters
   private renderingStopped = true;
   private objectsLoaded = false;
-  private Youtube_renderer = new CSS3DRenderer();
 
-  private notificationService: NotificationService;
   private UserUploadedScene:boolean;
   private userScene:THREE.Object3D;
+  private YoutubeCreator = new YoutubeThumbnail();
+  private CustomUtilities = new CustomUtilities();
   localData$?: Observable<any>;
 
   /**
@@ -84,14 +81,13 @@ export class ThreeJSComponent {
    */
 
   @Input({ required: true }) collectionsData!: Observable<CollectionData>[];//get data
-  @Input({ required: true }) viewType!: ViewType;
+  @Input({ required: true }) viewType!: ViewType; //get UI status
 
-  @ViewChild('renderContainer', { static: false }) container!: ElementRef;
-
-  //private datapointMeshes: Map<THREE.Mesh, Datafile>;
+  @ViewChild('renderContainer', { static: false }) container!: ElementRef; //get HTML render container 
 
 
 
+//private apiService: ApiService needs to be initialized here for it to be accessable 
   constructor(private renderer2: Renderer2,private ngZone: NgZone,private apiService: ApiService) {
     this.windowWidth=this.renderer.domElement.width;
     this.windowHeight=this.renderer.domElement.height;
@@ -121,12 +117,10 @@ export class ThreeJSComponent {
     this.loadedDatapoints_andMesh = [];
 
     //set transformControl
-   
-
     this.transformControl = new TransformControls( this.camera, this.renderer.domElement );
   
 
-    this.transformControl.setMode("translate"); //also scale,rotate
+    this.transformControl.setMode("translate"); //also can be scale,rotate
     this.scene.add(this.transformControl);
 
     // Add event listener for 'dragging-changed' event
@@ -134,193 +128,12 @@ export class ThreeJSComponent {
       this.controls.enabled = !event['value']; // Access 'this.controls' directly
     });
     
-   //this.UpdateCoordinates("651062f30e58680ea8b8b6fc",0,0,0);
 
   }
 
 
-   extractYouTubeVideoId(url: string): string | null {
-    // Regular expressions to match YouTube video IDs
-    const regexLong = /(?:\?v=|&v=|youtu\.be\/|\/embed\/|\/v\/|\/e\/|watch\?v=)([a-zA-Z0-9_-]{11})/;
-    const regexShort = /^([a-zA-Z0-9_-]{11})$/;
-  
-    // Check for a match using the long regex
-    const matchLong = url.match(regexLong);
-  
-    // If there's a match with the long regex, return the video ID
-    if (matchLong) {
-      return matchLong[1];
-    }
-  
-    // If there's no match with the long regex, check for a match with the short regex
-    const matchShort = url.match(regexShort);
-  
-    // If there's a match with the short regex, return the video ID
-    if (matchShort) {
-      return matchShort[1];
-    }
-  
-    // If no match is found, return null
-    return null;
-  }
 
-
-    Youtube ( id:string, x:number, y:number, z:number ) {
-    var div = document.createElement( 'div' );
-    div.style.width = '480px';
-    div.style.height = '360px';
-    div.style.backgroundColor = '#000';
-    var iframe = document.createElement( 'iframe' );
-    iframe.style.width = '480px';
-    iframe.style.height = '360px';
-    iframe.style.border = '0px';
-    iframe.src = [ 'https://www.youtube.com/embed/', id, '?rel=0&autoplay=1&mute=1' ].join( '' );
-    div.appendChild( iframe );
-    var object = new CSS3DObject( div );
-    object.position.set( x, y, z );
-
-    return object;
-  };
-
-  Add_youtube(){
-  
-				const container = document.querySelector('.threejs-renderer');
-        this.Youtube_renderer.setSize( this.windowWidth, this.windowHeight );
-        this.Youtube_renderer.domElement.style.position = 'absolute';
-        this.Youtube_renderer.domElement.style.top = '0px';
-        container!.appendChild(this.Youtube_renderer.domElement);
-    
-        const youtube1=this.Youtube( 'TlLijkYQjlw', 0, 0, -500 );
-        const youtube2=this.Youtube( 'KuGI0H_T0bw', 0, 300, -500 ) 
-        console.log("youtube initialized;",youtube1,youtube2 )
-    
-        this.object_group.add(youtube1);
-        this.object_group.add(youtube2);
-        
-        // Block iframe events when dragging camera
-    
-        const blocker = document.getElementById( 'Pause_video' );
-        blocker!.style.display = 'none';
-    
-        document.addEventListener( 'mousedown', function () {
-    
-          blocker!.style.display = '';
-    
-        } );
-        document.addEventListener( 'mouseup', function () {
-    
-          blocker!.style.display = 'none';
-    
-        } );
-  }
-
-
-
-
-
-
-  createVideoThumbnailPlane(DataID:string,videoId:string, x:number, y:number, z:number) {
-
-    const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/0.jpg`;
-
-
-
-    const texture = new THREE.TextureLoader().load(thumbnailUrl);
-
-    const geometry = new THREE.PlaneGeometry(32, 18); // Assuming 16:9 aspect ratio
-    const material = new THREE.MeshBasicMaterial({ map: texture });
-    const plane = new THREE.Mesh(geometry, material);
-    plane.name="Youtube_"+DataID;    
-    plane.position.set(x,y+20,z); //y and z are somehow swapped
-    this.loadedDatapoints_andMesh.push(plane);
-}
-
-
-
-NoFileModification(rawdata:Datafile,lon:number,lat:number) {
-  if (rawdata.content.location) { // Check if rawdata.location is defined
-    if (rawdata.content.location.coordinates) { // Check if rawdata.location.coordinates is defined
-      rawdata.content.location.coordinates[0] = lon;
-      rawdata.content.location.coordinates[1] = lat;
-    }
-}
-
-let isReferencedData = false;
-if(rawdata.dataType==='REFERENCED'){
-  isReferencedData=true;
-}
-return {
-  title: rawdata.title!,
-  description: rawdata.description,
-  dataType:
-  isReferencedData === true
-      ? DataType.REFERENCED
-      : DataType.NOTREFERENCED,
-  tags: rawdata.tags,
-  dataSet: SupportedDatasetFileTypes.NONE,
-  content: rawdata.content,
-};
-    }
-
-UpdateCoordinates(id:string,x:number,y:number,z:number){
-
-  const lon = this.Reverse_convertCoordinates(x,y,z).lon;
-  const lat = this.Reverse_convertCoordinates(x,y,z).lat;
-
-
-  this.apiService.getDatafile(id!).subscribe(result => {
-    const OGdata = result;
-
-
-    const data = this.NoFileModification(OGdata,lon,lat);
-    console.log("data",data,typeof(data));
-//13.326672,52.5130879
-    
-    this.apiService
-      .updateDatafile(id!, data)
-      .pipe(
-        catchError((err: HttpErrorResponse) => {
-          console.log("invalid data");
-
-          throw err.message;
-
-        })
-      )
-      .subscribe(() => {
-        console.log("updated");
-
-        this.notificationService.showInfo('createUpdateDatafile.creationSuccess');
-
-      });
-    });
-
-}
-
-SaveCoordinatesToDatabase(loadedDatapoints_andMesh:THREE.Mesh[]){
-//13.326672,52.51309605145015
-//13.321436963457137,52.51390016131765
-  loadedDatapoints_andMesh.forEach((datapointMesh) => {
-
-    
-    this.object_group.children.forEach(mesh => {
-      if(datapointMesh.name===mesh.name&&datapointMesh.name!==''){
-
-        console.log("coord:",mesh.name,mesh.position.x,mesh.position.y,mesh.position.z)
-      this.UpdateCoordinates(mesh.name,mesh.position.x,mesh.position.y,mesh.position.z);
-      //datapointMesh.position.set(mesh.position.x,mesh.position.y,mesh.position.z);
-
-     }
-    });
-   
-  });
-  console.log("saved scene coordinates to database!")
-
-
-}
-
-
-
-
+//Initialize click listener 
   ngOnInit() {
     this.renderer.domElement.addEventListener('click', (event) => {
       this.ngZone.run(() => {
@@ -361,34 +174,36 @@ SaveCoordinatesToDatabase(loadedDatapoints_andMesh:THREE.Mesh[]){
      // COLOR SELECTION
     const material_select = new THREE.MeshBasicMaterial({ color: 0xff0000 }); 
 
-    /**for ( let i = 1; i < intersects.length; i ++ ) {
-
-      ((intersects[ i ].object)as THREE.Mesh).material=this.material_test;
-
-    }*/
-    
-    //when click a point, raycaster will cast a ray in z axis to your screen,
-    // so the closest object to your screen will be saved in intersects[0], which is what you want to select
-
+ 
 
     if (intersects.length > 0) {
       const clickedObject = intersects[0].object as THREE.Mesh; // Cast to Mesh
+
       if (this.selectedObject !== clickedObject) {
         // Deselect the previously selected object.
         if (this.selectedObject) {
+          let material_deselect = clickedObject.material; 
+          //get the default material when not selected, has some logical issue when 
+          //dealing with different materials. Needs to be fixed 
+
+          this.selectedObject.material=material_deselect;//set color to selected object
+
           this.transformControl.detach();
         }
 
         // Select the clicked object.
+
         this.selectedObject = clickedObject;
         this.transformControl.attach(this.selectedObject);
         this.selectedObject.material=material_select;//set color to selected object
 
 
       } else {
+
         // Deselect when clicking on the already selected object.
         this.transformControl.detach();
         this.selectedObject = null;
+
 
       }
     } else {
@@ -404,7 +219,6 @@ SaveCoordinatesToDatabase(loadedDatapoints_andMesh:THREE.Mesh[]){
 
 
     // Ensure the controls and transformControl are disposed when the component is destroyed
-
   ngOnDestroy() {
     this.controls.dispose();
     this.transformControl.dispose();
@@ -413,41 +227,10 @@ SaveCoordinatesToDatabase(loadedDatapoints_andMesh:THREE.Mesh[]){
 
 
 
-  removeDuplicatesInArray(arr:THREE.Mesh[]) {
-    const uniqueMap = new Map();
-  
-    for (const item of arr) {
-      if (!uniqueMap.has(item.name)) {
-        uniqueMap.set(item.name, item);
-      }
-    }
-  
-    const uniqueArray = Array.from(uniqueMap.values());
-    return uniqueArray;
-  }
-
-   removeDuplicatesAndEmptyElements<T>(arr: T[]): T[] {
-    const uniqueSet = new Set<T>();
-    const result: T[] = [];
-  
-    for (const item of arr) {
-      // Check if the item is not empty and not already in the set
-      if (item !== '' && item !== undefined && !uniqueSet.has(item)) {
-        uniqueSet.add(item);
-        result.push(item);
-      }
-    }
-  
-    return result;
-  }
-
-   removeStringFromArray(arr: string[], target: string): string[] {
-    return arr.filter((item) => item !== target);
-  }
-
+//Everytime the collection data updates/Switch back to the tab, this function will be called to update scene
   Datapoint_refresh() {
 
-  // Clear the objects from the scene
+  // Clear the old objects from the scene
   this.loadedDatapoints_andMesh.forEach((datapointMesh) => {
     
     this.object_group.remove(datapointMesh);
@@ -457,9 +240,9 @@ SaveCoordinatesToDatabase(loadedDatapoints_andMesh:THREE.Mesh[]){
   // each item in the loadedDatapoints_andMesh array as you iterate through it.
 
 
-    this.loadedDatapoints_andMesh.length = 0;
+    this.loadedDatapoints_andMesh.length = 0;//reset mesh array
 
-    //Add new transfor control when data is refreshed
+    //Add new transfor control when data is refreshed, otherwise the control will be in the air
     this.transformControl= new TransformControls( this.camera, this.renderer.domElement );
     this.transformControl.setMode("translate"); //also scale,rotate
     this.scene.add(this.transformControl);
@@ -472,7 +255,6 @@ SaveCoordinatesToDatabase(loadedDatapoints_andMesh:THREE.Mesh[]){
     combineLatest(this.collectionsData).subscribe((collectionsData) =>
       collectionsData.forEach((collection) => {
         collection.files.results.forEach((datapoint) => {
-          //console.log("GET JSON:",JSON.stringify(datapoint))
           // Create new mesh for each of the datapoints
           const datapointMesh = new THREE.Mesh(
             new THREE.CylinderGeometry(1, 1, 1),
@@ -481,7 +263,7 @@ SaveCoordinatesToDatabase(loadedDatapoints_andMesh:THREE.Mesh[]){
           datapointMesh.name = "Data_mesh_"+datapoint._id!;//set id as name+specification for later convenience
           datapointMesh.scale.copy(new THREE.Vector3(10, 50, 10));
           // Convert the coordinates
-          const sceneCoordinates = this.convertCoordinates(
+          const sceneCoordinates = this.CustomUtilities.convertCoordinates(
             datapoint.content.location!.coordinates[0],
             datapoint.content.location!.coordinates[1]
           );
@@ -489,8 +271,11 @@ SaveCoordinatesToDatabase(loadedDatapoints_andMesh:THREE.Mesh[]){
           if (datapoint.dataType==="REFERENCED"){ //strict compare
             //video
             if((datapoint.content as Ref).mediaType==='VIDEO'){
-              const youtubeID = this.extractYouTubeVideoId((datapoint.content as Ref).url);
-            this.createVideoThumbnailPlane(datapoint._id!,youtubeID!,sceneCoordinates.x,0,sceneCoordinates.z);
+              const youtubeID = this.YoutubeCreator.extractYouTubeVideoId((datapoint.content as Ref).url);
+              const plane = this.YoutubeCreator.createVideoThumbnailPlane(datapoint._id!,youtubeID!,sceneCoordinates.x,0,sceneCoordinates.z);
+              this.loadedDatapoints_andMesh.push(plane!);
+              console.log("module:",plane);
+
             console.log(datapoint );//mediaType is declared under Ref in datafiles.ts
 
             }
@@ -514,7 +299,6 @@ SaveCoordinatesToDatabase(loadedDatapoints_andMesh:THREE.Mesh[]){
     
           this.loadedDatapoints_andMesh.push(datapointMesh);
           
-          //this.loadedDatapoints_andMesh.push(beam); same name will cause problem in later modification
 
        
         });  
@@ -523,19 +307,23 @@ SaveCoordinatesToDatabase(loadedDatapoints_andMesh:THREE.Mesh[]){
       
     );
   
-    this.loadedDatapoints_andMesh=this.removeDuplicatesInArray(this.loadedDatapoints_andMesh);//remove duplicates
+    this.loadedDatapoints_andMesh=  this.CustomUtilities.removeDuplicatesInArray(this.loadedDatapoints_andMesh);//remove duplicates
   
   }
 
-        ///////////////////////////////////////// Create user uploaded scene
-        if (this.UserUploadedScene==true){
+        /* Create user uploaded scene. 
+        
+        The main function is just a copy from the code above, but the data objects in the intersection
+        will be modifed. 
+        
+        */
+        if (this.UserUploadedScene==true){ //active through UI button
           let nameArr:string[] = [];
 
           //first add data, then find intersections and modify them by the user defined scene
           combineLatest(this.collectionsData).subscribe((collectionsData) =>
           collectionsData.forEach((collection) => {
             collection.files.results.forEach((datapoint) => {
-              //console.log("GET JSON:",JSON.stringify(datapoint))
               // Create new mesh for each of the datapoints
               const datapointMesh = new THREE.Mesh(
                 new THREE.CylinderGeometry(1, 1, 1),
@@ -544,7 +332,7 @@ SaveCoordinatesToDatabase(loadedDatapoints_andMesh:THREE.Mesh[]){
               datapointMesh.name = "Data_mesh_"+datapoint._id!;//set id as name+specification for later convenience
               datapointMesh.scale.copy(new THREE.Vector3(10, 50, 10));
               // Convert the coordinates
-              const sceneCoordinates = this.convertCoordinates(
+              const sceneCoordinates = this.CustomUtilities.convertCoordinates(
                 datapoint.content.location!.coordinates[0],
                 datapoint.content.location!.coordinates[1]
               );
@@ -552,8 +340,9 @@ SaveCoordinatesToDatabase(loadedDatapoints_andMesh:THREE.Mesh[]){
               if (datapoint.dataType==="REFERENCED"){ //strict compare
                 //video
                 if((datapoint.content as Ref).mediaType==='VIDEO'){
-                  const youtubeID = this.extractYouTubeVideoId((datapoint.content as Ref).url);
-                this.createVideoThumbnailPlane(datapoint._id!,youtubeID!,sceneCoordinates.x,0,sceneCoordinates.z);
+                  const youtubeID = this.YoutubeCreator.extractYouTubeVideoId((datapoint.content as Ref).url);
+                  const plane: THREE.Mesh = this.YoutubeCreator.createVideoThumbnailPlane(datapoint._id!,youtubeID!,sceneCoordinates.x,0,sceneCoordinates.z)!;
+                  this.loadedDatapoints_andMesh.push(plane);
                 console.log(datapoint );//mediaType is declared under Ref in datafiles.ts
     
                 }
@@ -567,21 +356,22 @@ SaveCoordinatesToDatabase(loadedDatapoints_andMesh:THREE.Mesh[]){
           
               this.loadedDatapoints_andMesh.push(datapointMesh);
               
-              this.loadedDatapoints_andMesh=this.removeDuplicatesInArray(this.loadedDatapoints_andMesh);//remove duplicates
+              this.loadedDatapoints_andMesh=this.CustomUtilities.removeDuplicatesInArray(this.loadedDatapoints_andMesh);//remove duplicates
 
               //Find and modify the intersections
               this.userScene.traverse((child)=>{
-                nameArr.push(child.name);
+                nameArr.push(child.name);//for 'data not found in the database' warning. 
 
                 this.loadedDatapoints_andMesh.forEach((item,index) => {
                   if (child instanceof THREE.Mesh && item.name===child.name ) {
                     // Clone the Mesh to avoid sharing the same geometry/material
                     const mesh = child.clone();
                     this.loadedDatapoints_andMesh[index] = mesh; // Update the array element, cant use item cuz its only a ref
-                    nameArr=this.removeDuplicatesAndEmptyElements(nameArr);
+                    nameArr=this.CustomUtilities.removeDuplicatesAndEmptyElements(nameArr);
+                    //remove duplicated names in the nameArr, so we get a name array with unique data IDs of the intersectional selection
 
-                    nameArr = this.removeStringFromArray( nameArr,child.name);
-
+                    nameArr = this.CustomUtilities.removeStringFromArray( nameArr,child.name);
+                    //remove the modified data IDs, so we get the IDs that are not in the intersection for later warning.
 
                   }
                 });
@@ -609,9 +399,9 @@ SaveCoordinatesToDatabase(loadedDatapoints_andMesh:THREE.Mesh[]){
   }
 
 
-
+/*
   addCustomMesh(){
-               // add test geometry, put here alone to avoid duplicates. 
+               // add test geometry
 
 
                let cube, sphere, selectedObject;
@@ -627,10 +417,17 @@ SaveCoordinatesToDatabase(loadedDatapoints_andMesh:THREE.Mesh[]){
      
                this.loadedDatapoints_andMesh.push(cube);
                this.loadedDatapoints_andMesh.push(sphere);
-  }
+  }*/
+
+
+
+
+
+
+
   
   /**
-   * Loads the renderer and starts the render() function.
+   * Loads the renderer and starts the render() function, activates when switched to tab.
    */
   loadRenderer() {
     this.UserUploadedScene=false; //default 
@@ -650,7 +447,6 @@ SaveCoordinatesToDatabase(loadedDatapoints_andMesh:THREE.Mesh[]){
     //call to initialzed and refresh datapoints
     this.Datapoint_refresh();
     // Resize renderer window
-    //this.addCustomMesh(); //Not using it, need to simply the coordinates update
 
 
 
@@ -706,30 +502,24 @@ SaveCoordinatesToDatabase(loadedDatapoints_andMesh:THREE.Mesh[]){
    * Unloads the renderer, stopping future calls for render()
    */
   unloadRenderer() {
-    this.scene.remove(this.transformControl);
-
-    this.transformControl.dispose(); 
-    
-  //remove old transform control when window is off, prevent transform control in the air
-
     this.renderingStopped = true;
 
 
-    //double clean to avoid duplicates when updating collections
-
+      //remove old transform control when window is off, prevent transform control in the air
+    this.scene.remove(this.transformControl);
+    this.transformControl.dispose(); 
+    
+    //clean again here to avoid duplicates when updating collections
   this.loadedDatapoints_andMesh.forEach((datapointMesh) => {
-    
     this.object_group.remove(datapointMesh);
-    
   });
-
     this.loadedDatapoints_andMesh.length = 0;
-
-
   }
 
+
+
   /**
-   * Hide the loading text component
+   * Hide the loading text component cuz it's ugly
    */
   hideLoadingDiv() {
     const loadingDiv = document.querySelector(
@@ -740,37 +530,14 @@ SaveCoordinatesToDatabase(loadedDatapoints_andMesh:THREE.Mesh[]){
     }
   }
 
-  /**
-   * Translates the world coordinates (long, lat) into the scene coordinates (x, y, z).
-   * @param longitude the longitude of the datapoint
-   * @param latitude the latitude of the datapoint
-   * @returns translated coordinates
-   */
-  convertCoordinates(longitude: number, latitude: number) {
-    // Scaling factor, calculated based on the scene size and the long,lat coordinates of the city mesh
-    const scaleFactor = 214 / (13.329418317727734 - 13.32631827581811); // Assuming x-direction corresponds to longitude
-    // The relative origin of the scene. The scene coordinates of (0,0,0) now will correspond to these coordinates in long, lat system.
-    const latitudeOffset = 52.513091975725075;
-    const longitudeOffset = 13.327974301530459;
-    // Conversion formulas
-    const x = (longitude - longitudeOffset) * scaleFactor;
-    const y = 0; // Assuming a flat scene, no vertical displacement
-    const z = -(latitude - latitudeOffset) * scaleFactor;
-    return { x, y, z };
-  }
 
-  Reverse_convertCoordinates(x: number, y: number,z:number) {
-    // Scaling factor, calculated based on the scene size and the long,lat coordinates of the city mesh
-    const scaleFactor = 214 / (13.329418317727734 - 13.32631827581811); // Assuming x-direction corresponds to longitude
-    // The relative origin of the scene. The scene coordinates of (0,0,0) now will correspond to these coordinates in long, lat system.
-    const latitudeOffset = 52.513091975725075;
-    const longitudeOffset = 13.327974301530459;
-    // Conversion formulas
-  
-    const lon = x/scaleFactor+longitudeOffset;
-    const lat = z/scaleFactor+latitudeOffset;
-    return { lon,lat};
-  }
+
+
+
+
+
+
+
 
   /**
    * Loads the city tiles
@@ -795,7 +562,7 @@ SaveCoordinatesToDatabase(loadedDatapoints_andMesh:THREE.Mesh[]){
               mesh.geometry.center();
               mesh.translateZ(210);
               mesh.position.copy(tile.scenePosition);
-              //sc.add(mesh);
+              sc.add(mesh);
               this.hideLoadingDiv();
             }
           );
@@ -805,7 +572,8 @@ SaveCoordinatesToDatabase(loadedDatapoints_andMesh:THREE.Mesh[]){
   }
 
 
-  //convert Mesh array to group for download
+  //convert Mesh array to group for download, because we want to separte the map meshes and object meshes.
+  //Map meshes shouldn't be downloaded
   MeshArray_toGroup(){
     // Add each mesh from the array to the group
     this.loadedDatapoints_andMesh.forEach((mesh) => {
@@ -817,6 +585,12 @@ SaveCoordinatesToDatabase(loadedDatapoints_andMesh:THREE.Mesh[]){
 
 
 
+
+
+
+
+
+  
   
   //GUI
   Add_gui(){
@@ -837,9 +611,6 @@ SaveCoordinatesToDatabase(loadedDatapoints_andMesh:THREE.Mesh[]){
 
         ioFolder.add(ioFuncs, 'save');
         //ioFolder.add(ioFuncs, 'SaveSceneCoordinates');
-
-        
-        
         // Create a button in the folder to trigger the file input
         ioFolder.add({ UploadJSON: () => this.fileinput() }, 'UploadJSON');
         
@@ -849,8 +620,6 @@ SaveCoordinatesToDatabase(loadedDatapoints_andMesh:THREE.Mesh[]){
         const guiContainer = this.gui.domElement;
         const container = document.getElementById('UI');
         container!.appendChild(guiContainer);
-
-    
   }
 
 
@@ -869,8 +638,6 @@ SaveCoordinatesToDatabase(loadedDatapoints_andMesh:THREE.Mesh[]){
     }
   //save scene to JSON
   save(object_group:THREE.Group){
-    
-
     const result = object_group.toJSON();
 
     const output =JSON.stringify(result);

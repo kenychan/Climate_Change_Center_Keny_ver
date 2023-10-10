@@ -250,7 +250,8 @@ export class ThreeJSComponent {
       this.controls.enabled = !event['value']; // Access 'this.controls' directly
     });
 
-    // Create new ones when it's reading from database
+    /*Create new ones when it's reading from database*/
+
     if (this.UserUploadedScene==false){
     combineLatest(this.collectionsData).subscribe((collectionsData) =>
       collectionsData.forEach((collection) => {
@@ -267,6 +268,9 @@ export class ThreeJSComponent {
             datapoint.content.location!.coordinates[0],
             datapoint.content.location!.coordinates[1]
           );
+
+          /*Youtube Thumbnial*/
+
           //if it's refernce data, then create picture of reference
           if (datapoint.dataType==="REFERENCED"){ //strict compare
             //video
@@ -274,10 +278,7 @@ export class ThreeJSComponent {
               const youtubeID = this.YoutubeCreator.extractYouTubeVideoId((datapoint.content as Ref).url);
               const plane = this.YoutubeCreator.createVideoThumbnailPlane(datapoint._id!,youtubeID!,sceneCoordinates.x,0,sceneCoordinates.z);
               this.loadedDatapoints_andMesh.push(plane!);
-              console.log("module:",plane);
-
-            console.log(datapoint );//mediaType is declared under Ref in datafiles.ts
-
+           
             }
           }
           // Set the position and add to the scene
@@ -342,8 +343,7 @@ export class ThreeJSComponent {
                 if((datapoint.content as Ref).mediaType==='VIDEO'){
                   const youtubeID = this.YoutubeCreator.extractYouTubeVideoId((datapoint.content as Ref).url);
                   const plane: THREE.Mesh = this.YoutubeCreator.createVideoThumbnailPlane(datapoint._id!,youtubeID!,sceneCoordinates.x,0,sceneCoordinates.z)!;
-                  this.loadedDatapoints_andMesh.push(plane);
-                console.log(datapoint );//mediaType is declared under Ref in datafiles.ts
+             
     
                 }
               }

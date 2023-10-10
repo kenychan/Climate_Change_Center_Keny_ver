@@ -1,0 +1,23 @@
+Structure: 
+-Main renderder: 'Threejs-view.component.ts';
+    Which uses 'threejs-view.cmponent.html' as template. 
+    <div class="threejs-renderer" #renderContainer> is the render container
+
+    -When the tab is switched to Threejs-view, 'loadRenderer()' will be called. //controlled by journey.componenet.ts
+    -loadRenderer() will then load mapmesh and call 'Datapoint_refresh()' to get data points and create meshes from them. 
+    -'Datapoint_refresh()' can create either default scene or user customed scene, the switch is  'UserUploadedScene:boolean', which is controlled by GUI.
+        1.'Datapoint_refresh()' will first delete old datameshes (if any), stored in 'loadedDatapoints_andMesh' and 'object_group'. 
+            #The reason for Mesh array'loadedDatapoints_andMesh' to exist is because the raycaster has problems selecting directly from scene. //raycaster.intersectObjects(this.loadedDatapoints_andMesh, true);
+            #The reason for Mesh Group 'object_group' to exist is because we want the user to only download non-map meshes, and this group also determines what's being rendered.
+        2.Then a new transform control is initialized afterwards, otherwise the old controller will still be in the air. 
+        3.Then if it's not user defined scene, it reads data points and create meshes, and if the data point is a reference data and it's a video, youtube thumbnails will be created.
+        4.If it's an userdefiend scene, it will read data points and then modify their scene representation based on uploaded file.
+
+    -'loadTiles' is the function that loads maps.
+
+
+-Other components under ./EditorComponents: 
+    -'Custom_ultilities': micro functions needed for renderer
+    -'UpdateDatabase': modify the coordinates in the databse if according to the scene. NOT USED.
+    -'Youtube_thumbnials': to create youtube thumbnails 
+

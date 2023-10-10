@@ -29,8 +29,8 @@ import {
   JsonObject,
 } from '../../../../../common/types/datafile';
 import { ApiService } from '../../shared/service/api.service';
-import {YoutubeThumbnail} from './Youtube_thumbnail';
-import { CustomUtilities } from './Custom_ultilities';
+import {YoutubeThumbnail} from './EditorComponents/Youtube_thumbnail';
+import { CustomUtilities } from './EditorComponents/Custom_ultilities';
 
 
 // Interface representing a single city tile
@@ -590,7 +590,7 @@ export class ThreeJSComponent {
 
 
 
-  
+
   
   //GUI
   Add_gui(){

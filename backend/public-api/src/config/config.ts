@@ -4,7 +4,7 @@ export default {
   // URL of the MongoDB database to connect to.
   // With Docker, the name of the container can also be provided instead of the IP address.
   // Here: mongodb://<IP>:<PORT>/<COLLECTION_NAME>
-  MONGODB_URL: process.env.MONGODB_URL ?? "mongodb://localhost:27017/datastore",
+  MONGODB_URL: process.env.MONGODB_URL ?? "mongodb://foouser:foopwd@localhost:27017/datastore?authSource=admin&retryWrites=true&w=majority",
   // Port of the express server
   PORT: process.env.PORT ?? 40000,
   // IP of the express server
@@ -17,4 +17,9 @@ export default {
   }:${process.env.PYTHON_BACKEND_PORT ?? 50000}/api`,
   // firebase config
   FIREBASE_CONFIG: frontendEnvironment.firebase,
+
+  // SSL path for https
+  /*
+  SSL_CERT_PATH: './localhost.pem',
+  SSL_KEY_PATH: '/localhost-key.pem',*/
 } as const;

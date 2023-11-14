@@ -51,6 +51,9 @@ services:
       - "${MONGODB_PORT}:${MONGODB_PORT}"
     volumes:
       - mongodb_data_container:/data/db
+      - ./mongo_config/mongod.conf:/etc/mongod.conf  # Mount the custom configuration file
+    command: mongod --config /etc/mongod.conf --auth  # Use custom config file, this grants authentification
+  # Define other services if needed
 
 # Keeps the MongoDB data consistent between shutdowns
 volumes:

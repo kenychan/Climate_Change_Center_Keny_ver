@@ -37,7 +37,7 @@ import * as THREE from "three";
 
   public createVideoThumbnailPlane(DataID:string,videoId:string, x:number, y:number, z:number): THREE.Mesh {
 
-    const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/0.jpg`;
+    const thumbnailUrl = `http://localhost:3000/proxy?videoId=${videoId}`; //need to start proxy server for this to work
 
 
 

@@ -52,6 +52,14 @@
     <textarea matInput [(ngModel)]="description"></textarea>
   </mat-form-field>
 
+  <button class="button-gps" mat-raised-button color="primary" (click)="getLocation()" >
+    <div>
+      <span>Get your location</span>
+      <mat-spinner diameter="20" *ngIf="isLoading"></mat-spinner>
+    </div>
+  </button>
+
+  
   <div class="long-lat-container">
     <mat-form-field class="long-lat-input">
       <mat-label>{{ 'datafile.longitude' | translate }}</mat-label>

@@ -1,6 +1,6 @@
 import { COMMA, ENTER } from '@angular/cdk/keycodes';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, ElementRef, ViewChild } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Output, ViewChild } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatChipInputEvent } from '@angular/material/chips';
@@ -37,10 +37,15 @@ interface DropdownOption {
  * https://material.angular.io/components/chips/examples#chips-autocomplete for the keyword input
  * https://material.angular.io/components/select/overview for the dropdown
  */
+
+
 @Component({
   templateUrl: './no-file.component.html',
   styleUrls: ['./no-file.component.scss'],
 })
+
+
+
 export class NoFileUploadComponent {
   isCreatingDataFile = true;
   id?: string | null;
@@ -57,6 +62,8 @@ export class NoFileUploadComponent {
 
   longitude?: number;
   latitude?: number;
+
+
 
   mediaTypeOptions: DropdownOption[] = [
     { value: MediaType.PHOTO, viewValue: 'Picture' },
@@ -79,6 +86,7 @@ export class NoFileUploadComponent {
 
   @ViewChild('uploadMapComponent')
   uploadMapComponent?: MapComponent;
+
 
   constructor(
     private coordinateService: CoordinateService,
@@ -192,6 +200,27 @@ export class NoFileUploadComponent {
     );
   }
 
+
+
+   getLocation() {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((position) =>{
+        alert('Location accessed: '+position.coords.latitude+position.coords.longitude)
+        this.latitude=position.coords.latitude;
+        this.longitude=position.coords.longitude;
+
+
+        this.uploadMapComponent!.inputboxTOmarker(this.longitude,this.latitude);//add pin
+
+          },function(){
+                alert('GPS location failed, please refresh')
+          },{timeout:500})
+    } 
+    else { 
+      alert('GPS location failed')}
+
+  }
+  
   /** Creates a new data file */
   uploadData() {
     if (!this.formIsValid()) {
@@ -242,6 +271,7 @@ export class NoFileUploadComponent {
 
   handleCoordinateChange(coords: [number, number]) {
     const transformedCoord = this.coordinateService.transformToLongLat(coords);
+    //transform coordinates to lon,lat and set them in boxes
     this.longitude = transformedCoord[0];
     this.latitude = transformedCoord[1];
   }

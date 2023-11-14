@@ -83,6 +83,7 @@ export class MapComponent implements AfterViewInit, OnChanges {
    */
   @Output()
   coordinateSelected = new EventEmitter<[number, number]>();
+  //can search 'coordinateSelected' and find where it's used as input
 
   /** 
    * Emits as soon as the the currently applied filter changed and contains all filters.
@@ -560,22 +561,41 @@ export class MapComponent implements AfterViewInit, OnChanges {
    */
   addClickListener() {
     this.map.on('click', (event) => {
-      const coordinate = event.coordinate;
-
+      const coordinate = event.coordinate; //get coordinate
       this.popupSource.clear();
       const marker = new Feature({
-        geometry: new Point(coordinate),
+        geometry: new Point(coordinate)
+        //eg:  geometry: new Point([1492515.1614275046,6897004.229893055]),
+
       });
-      this.popupSource.addFeature(marker);
+      this.popupSource.addFeature(marker);//draw the marker on map
 
       this.displayPopup(coordinate as [number, number]);
       this.lookupAddressFromCoords(coordinate);
 
       // Emit the selected coordinate to the parent component
       this.coordinateService.setCoordinate(coordinate as [number, number]);
-      this.coordinateSelected.emit(coordinate as [number, number]);
+      this.coordinateSelected.emit(coordinate as [number, number]); //send the picked coordinates to input box
     });
   }
+
+
+  /* get the lon lat from inputbox and convert to coordinate, then add marker to map. */ 
+  inputboxTOmarker(lon:number,lat:number) {
+    const coordinate = this.coordinateService.transformFromLongLat(lon,lat);
+    this.popupSource.clear();
+      const marker = new Feature({
+        geometry: new Point(coordinate)
+        //eg:  geometry: new Point([1492515.1614275046,6897004.229893055]),
+
+      });
+      this.popupSource.addFeature(marker);//draw the marker on map
+
+      this.displayPopup(coordinate as [number, number]);
+      this.lookupAddressFromCoords(coordinate);
+
+  }
+
 
   /**
    * Draws a marker on the map for the given longitude and latitude coordinates

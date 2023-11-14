@@ -139,6 +139,26 @@ export class RawDatasetsUploadComponent {
     return this.availablePredefinedKeywords.filter(keyword => keyword.toLowerCase().includes(filterValue));
   }
 
+  /*get currrent gps location*/
+  getLocation() {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((position) =>{
+        alert('Location accessed: '+position.coords.latitude+position.coords.longitude)
+
+        this.latitude=position.coords.latitude;
+        this.longitude=position.coords.longitude;
+        this.uploadMapComponent!.inputboxTOmarker(this.longitude,this.latitude);//add pin
+
+          },function(){
+                alert('GPS location failed, please refresh')
+          },{timeout:500})
+    } 
+    else { 
+      alert('GPS location failed')}
+
+  }
+
+
   /** Creates a new data file */
   uploadData() {
     if (!this.formIsValid()) {

@@ -27,6 +27,7 @@ export class ApiService {
   constructor(private http: HttpClient) {}
 
   getDatafiles(limit: number, skip: number, onlyMetadata = false) {
+    console.log("___",this.backendUrl);
     return this.http.get<PaginationResult<Datafile>>(
       this.backendUrl +
         `/datafile/limit=${limit}&skip=${skip}&onlyMetadata=${onlyMetadata}`

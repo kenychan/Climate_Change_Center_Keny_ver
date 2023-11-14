@@ -6,6 +6,8 @@ import morgan from "morgan";
 import helmet from "helmet";
 import { RegisterRoutes } from "../build/routes";
 import swaggerUi from "swagger-ui-express";
+import https from "https"; // Import the HTTPS module
+import fs from "fs"; // Import the File System module to read SSL certificates
 
 import config from "./config/config";
 import errorMiddleware from "./middlewares/error.middleware";
@@ -51,7 +53,6 @@ class App {
   // initialize Database Connection
   private initializeDatabaseConnection(): Promise<void> {
     const { MONGODB_URL } = config;
-
     // register disconnect when exiting the app
     process.on("SIGINT", async () => {
       await mongoose.connection.close();
@@ -64,6 +65,7 @@ class App {
       .connect(MONGODB_URL)
       .then(() => {
         console.log("Connected to the database at: %s", MONGODB_URL);
+        
       })
       .catch((error: Error) => {
         console.log(
@@ -76,6 +78,7 @@ class App {
       });
   }
 
+  
   // Generates routes and initializes Swagger documentation.
   private generateRoutesAndInitializeSwagger(): void {
     // register swagger route
@@ -125,6 +128,35 @@ class App {
       })
     );
   }
+//Https version
+/*
+  // start express server
+  private async listen(): Promise<void> {
+    const { HOST, PORT, DISABLE_SWAGGER_AUTH, SSL_CERT_PATH, SSL_KEY_PATH } = config; // Add SSL certificate paths to your config
+
+    const privateKey = fs.readFileSync(SSL_KEY_PATH, "utf8");
+    const certificate = fs.readFileSync(SSL_CERT_PATH, "utf8");
+    const credentials = { key: privateKey, cert: certificate };
+
+    // Create an HTTPS server
+    const httpsServer = https.createServer(credentials, this.express);
+
+    return new Promise((resolve) =>
+      httpsServer.listen(PORT, () => {
+        console.log(`Api is running on https://${HOST}:${PORT}/api`); // Use HTTPS
+        console.log(`Documention is running on https://${HOST}:${PORT}/docs`); // Use HTTPS
+        console.log(`Health check is running on https://${HOST}:${PORT}/health`); // Use HTTPS
+        if (DISABLE_SWAGGER_AUTH) {
+          console.warn("Swagger authentication is disabled!");
+        }
+
+        resolve();
+      })
+    );
+  }
+*/ 
+
+
 
   // start the application
   public async start(): Promise<void> {

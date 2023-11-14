@@ -22,7 +22,7 @@ import { FilterBlocksModule } from './filter-blocks/filter-blocks.module';
 import { UploadDataModule } from './upload-data/upload-data.module';
 import { YouTubePlayerModule } from '@angular/youtube-player';
 import { environment } from 'src/environments/environment.development';
-
+import { HashLocationStrategy, LocationStrategy } from '@angular/common';
 
 // Factory function for TranslateHttpLoader
 export function HttpLoaderFactory(http: HttpClient) {
@@ -34,6 +34,7 @@ export function HttpLoaderFactory(http: HttpClient) {
     AppComponent,
     ViewDatasetsComponent,
     BrowseJourneyComponent,
+
   ],
   exports:[
   ],
@@ -66,7 +67,8 @@ export function HttpLoaderFactory(http: HttpClient) {
     provideFirebaseApp(() => initializeApp(environment.firebase)),
     provideAuth(() => getAuth()),
   ],  
-  providers: [],
+  providers: [{provide: LocationStrategy, useClass: HashLocationStrategy}
+],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

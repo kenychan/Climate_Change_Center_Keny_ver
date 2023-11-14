@@ -69,7 +69,17 @@
       </mat-form-field>
     </ng-container>
 
+
+
+    <button class="button-gps" mat-raised-button color="primary" (click)="getLocation()" >
+      <div>
+        <span>Get your location</span>
+        <mat-spinner diameter="20" *ngIf="isLoading"></mat-spinner>
+      </div>
+    </button>
+
     <div class="long-lat-container">
+  
       <mat-form-field class="long-lat-input">
         <mat-label>{{ 'datafile.longitude' | translate }}</mat-label>
         <input matInput type="number" [(ngModel)]="longitude">
@@ -95,8 +105,11 @@
         <mat-spinner diameter="20" *ngIf="isLoading"></mat-spinner>
       </div>
     </button>
+
+
 </div>
 <div class="half-page">
   <app-map #uploadMapComponent (coordinateSelected)="handleCoordinateChange($event)" [enableDrawFeatures]="false"></app-map>
+  <!--coordinateSelected is emitted from map component and here we use it as an input in function handleCoordinateChange($event)-->
 </div>
 

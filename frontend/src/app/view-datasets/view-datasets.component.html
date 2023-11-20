@@ -3,7 +3,7 @@
     (onSearch)="loadData({ filterSet: $event })"
   ></app-filter-blocks>
   <ng-container *ngIf="dataSource.length > 0; else noData">
-    <table class="table" mat-table [dataSource]="dataSource">
+    <table  mat-table [dataSource]="dataSource">
       <!-- Title Column -->
       <ng-container matColumnDef="title">
         <th mat-header-cell *matHeaderCellDef>
@@ -13,7 +13,7 @@
       </ng-container>
 
       <!-- Describtion Column -->
-      <ng-container matColumnDef="description">
+      <ng-container  matColumnDef="description">
         <th mat-header-cell *matHeaderCellDef>
           {{ "datafile.description" | translate }}
         </th>

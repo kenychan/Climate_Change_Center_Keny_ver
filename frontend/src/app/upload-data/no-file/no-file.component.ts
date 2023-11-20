@@ -292,12 +292,35 @@ export class NoFileUploadComponent {
     }
   }
 
+
+   isGoogleDriveLink(link: string): boolean {
+    return link.includes('drive.google.com');
+  }
+  
+   getDirectDownloadLink(shareLink: string): string | null {
+    if (!this.isGoogleDriveLink(shareLink)) {
+      return null;
+    }
+  
+    const parts = shareLink.split('/');
+    const fileIdIndex = parts.findIndex(part => part === 'd');
+  
+    if (fileIdIndex !== -1 && fileIdIndex < parts.length - 1) {
+      const fileId = parts[fileIdIndex + 1];
+      return `https://drive.google.com/uc?export=download&id=${fileId}`;
+    } else {
+      return null;
+    }
+  }
+  
+
+
   /** Transforms the values of the form into a datafile object */
   toDataFile(): Datafile {
     let content: Ref | NotRef;
     if (this.isReferencedData) {
       content = {
-        url: this.url!,
+        url: this.getDirectDownloadLink(this.url!)!,
         mediaType: this.mediaType!,
         location: {
           type: 'Point',

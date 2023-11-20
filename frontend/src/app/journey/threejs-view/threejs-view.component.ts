@@ -280,6 +280,24 @@ export class ThreeJSComponent {
               this.loadedDatapoints_andMesh.push(plane!);
            
             }
+
+           //picture
+           if((datapoint.content as Ref).mediaType==='PHOTO'){
+            const plane: THREE.Mesh = this.YoutubeCreator.createPicture(datapoint._id!,(datapoint.content as Ref).url!,sceneCoordinates.x,0,sceneCoordinates.z)!;
+            this.loadedDatapoints_andMesh.push(plane!);
+
+
+          }
+
+          
+          //sound
+          if((datapoint.content as Ref).mediaType==='SOUNDFILE'){
+            const plane: THREE.Mesh = this.YoutubeCreator.createSound(datapoint._id!,sceneCoordinates.x,0,sceneCoordinates.z)!;
+            this.loadedDatapoints_andMesh.push(plane!);
+
+    
+          }  
+          
           }
           // Set the position and add to the scene
           datapointMesh.position.set(
@@ -346,6 +364,20 @@ export class ThreeJSComponent {
              
     
                 }
+                //picture
+                if((datapoint.content as Ref).mediaType==='PHOTO'){
+                  const plane: THREE.Mesh = this.YoutubeCreator.createPicture(datapoint._id!,(datapoint.content as Ref).url!,sceneCoordinates.x,0,sceneCoordinates.z)!;
+                  this.loadedDatapoints_andMesh.push(plane!);
+
+    
+                }
+                //sound
+                if((datapoint.content as Ref).mediaType==='SOUNDFILE'){
+                  const plane: THREE.Mesh = this.YoutubeCreator.createSound(datapoint._id!,sceneCoordinates.x,0,sceneCoordinates.z)!;
+                  this.loadedDatapoints_andMesh.push(plane!);
+
+    
+                }                
               }
               // Set the position and add to the scene
               datapointMesh.position.set(

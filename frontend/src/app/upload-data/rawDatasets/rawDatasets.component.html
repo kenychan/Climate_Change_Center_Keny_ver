@@ -1,4 +1,6 @@
- <div class="half-page input-container">
+<div class = "maincontainer">
+
+<div class="half-page input-container">
 
   <div class="header-row">
     <button mat-icon-button routerLink="/upload-data" color="primary">
@@ -83,4 +85,6 @@
 <div class="half-page">
   <app-map #uploadMapComponent (coordinateSelected)="handleCoordinateChange($event)"
     [enableDrawFeatures]="false"></app-map>
+</div>
+
 </div>

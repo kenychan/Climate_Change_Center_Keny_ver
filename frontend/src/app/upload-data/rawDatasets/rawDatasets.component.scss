@@ -2,8 +2,17 @@
     display: flex;
 }
 
+.maincontainer{
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
+
 .half-page {
-    width: 50%;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+
 }
 
 .input-container {
@@ -52,3 +61,12 @@ mat-slide-toggle {
     margin-bottom: 20px;
 
 }
+
+@media screen and (max-width: 767px) {
+    .maincontainer{
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    }
+    
+  }

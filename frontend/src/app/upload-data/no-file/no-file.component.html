@@ -1,3 +1,4 @@
+<div class = "maincontainer">
 <div class="half-page input-container">
 
   <div class="header-row">
@@ -108,8 +109,10 @@
 
 
 </div>
+
+
 <div class="half-page">
   <app-map #uploadMapComponent (coordinateSelected)="handleCoordinateChange($event)" [enableDrawFeatures]="false"></app-map>
   <!--coordinateSelected is emitted from map component and here we use it as an input in function handleCoordinateChange($event)-->
 </div>
-
+</div>

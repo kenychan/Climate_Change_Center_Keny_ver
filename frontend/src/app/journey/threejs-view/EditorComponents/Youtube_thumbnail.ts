@@ -37,7 +37,7 @@ import * as THREE from "three";
 
   public createVideoThumbnailPlane(DataID:string,videoId:string, x:number, y:number, z:number): THREE.Mesh {
 
-    const thumbnailUrl = `http://localhost:3000/proxy?videoId=${videoId}`; //need to start proxy server for this to work
+    const thumbnailUrl = `http://localhost:3000/proxy_youtube?videoId=${videoId}`; //need to start proxy server for this to work
 
 
 
@@ -55,6 +55,46 @@ import * as THREE from "three";
 
 }
 
+//create plane when ref is picture.
+public createPicture(DataID:string,piclink:string, x:number, y:number, z:number): THREE.Mesh {
+
+  const thumbnailUrl = `http://localhost:3000/proxy_picture?Pic_url=${piclink}`; //need to start proxy server for this to work
+
+
+  const texture = new THREE.TextureLoader().load(thumbnailUrl);
+
+  const geometry = new THREE.PlaneGeometry(32, 18); // Assuming 16:9 aspect ratio
+  const material = new THREE.MeshBasicMaterial({ map: texture });
+  const plane = new THREE.Mesh(geometry, material);
+  plane.name="Picture_"+DataID;    
+  plane.position.set(x,y+20,z); //y and z are somehow swapped
+
+  return plane;
+  //this.loadedDatapoints_andMesh.push(plane);
+
+
+}
+
+//create plane when ref is picture.
+public createSound(DataID:string, x:number, y:number, z:number): THREE.Mesh {
+
+  const thumbnailUrl = `http://localhost:3000/proxy_sound?sound_url=${'https://cdn.icon-icons.com/icons2/1678/PNG/512/wondicon-ui-free-speaker_111240.png'}`; //need to start proxy server for this to work
+
+
+
+  const texture = new THREE.TextureLoader().load(thumbnailUrl);
+
+  const geometry = new THREE.PlaneGeometry(32, 18); // Assuming 16:9 aspect ratio
+  const material = new THREE.MeshBasicMaterial({ map: texture });
+  const plane = new THREE.Mesh(geometry, material);
+  plane.name="Sound_"+DataID;    
+  plane.position.set(x,y+20,z); //y and z are somehow swapped
+
+  return plane;
+  //this.loadedDatapoints_andMesh.push(plane);
+
+
+}
 
 
 

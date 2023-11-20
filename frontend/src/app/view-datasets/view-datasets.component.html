@@ -3,7 +3,7 @@
     (onSearch)="loadData({ filterSet: $event })"
   ></app-filter-blocks>
   <ng-container *ngIf="dataSource.length > 0; else noData">
-    <table mat-table [dataSource]="dataSource">
+    <table class="table" mat-table [dataSource]="dataSource">
       <!-- Title Column -->
       <ng-container matColumnDef="title">
         <th mat-header-cell *matHeaderCellDef>

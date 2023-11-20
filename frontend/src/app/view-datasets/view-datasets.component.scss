@@ -6,9 +6,12 @@ app-filter-blocks {
 
 .all-data-actions {
   display: flex;
+  
   justify-content: flex-end;
   padding: 30px 30px;
 }
+
+
 
 .error-message {
     background-color: #ffcccc;
@@ -30,10 +33,30 @@ app-filter-blocks {
     font-weight: bold;
   }
 
-  .table {
-    margin: 20px;
-  }
+ 
 
   .full-width {
     width: 100%;
   }
+
+/* Standard table styles */
+.mat-elevation-z8 {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+.table th {
+  text-align: left;
+  background-color: #f2f2f2;
+}
+

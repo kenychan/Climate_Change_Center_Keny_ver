@@ -1,6 +1,6 @@
 # Welcome to the Tangible Climate Futures Repository
 
-This is an updated official repository for the `Tangible Climate Futures` project. The original code can be found in our [wiki](https://github.com/Corgam/SS23_ADSP_TCF/wiki).
+This is an updated official code for the `Tangible Climate Futures` project. The original code can be found in our https://github.com/Corgam/SS23_ADSP_TCF/.
 
 Project Developers:
 
@@ -11,7 +11,7 @@ Project Developers:
 - **Florian Jäger** (Frontend)
 - **Frederik Stalschus** (Development Features & Deployment, Backend: Python)
 - **Guo Chen** (Keny Chan) (Project Coordinator, Fullstack Trouble Shooting and further development)
-- 
+  
 # Project Deployment
 
 Our Project can be deployed in multiple ways, including full-Docker deployment, developer deployment, and on the Google Cloud Platform (using Terraform).

@@ -16,7 +16,7 @@ upload_parser.add_argument("file", type=FileStorage, location="files", required=
 @api.expect(upload_parser)
 class ConvertNetCDFMetadataToJSON(Resource):
     @api.response(200, "Success")
-    @api.response(400, "Bad Request")
+    @api.response(400, "connected to python backend but: Bad Request")
     def post(self):
         """
         Uploads a NetCDF file and converts its metadata to JSON.
@@ -36,7 +36,7 @@ class ConvertNetCDFMetadataToJSON(Resource):
 @api.expect(upload_parser)
 class ConvertNetCDFDataToJSON(Resource):
     @api.response(200, "Success")
-    @api.response(400, "Bad Request")
+    @api.response(400, "connected to python backend but: Bad Request")
     def post(self):
         """
         Uploads a NetCDF file and converts its data to JSON.
@@ -64,7 +64,7 @@ cerv2_parser.add_argument("step_size", type=str, location="form", required=True)
 @api.expect(cerv2_parser)
 class ConvertCERV2DataToJSONChunks(Resource):
     @api.response(200, "Success")
-    @api.response(400, "Bad Request")
+    @api.response(400, "connected to python backend but: Bad Request")
     def post(self):
         """
         Uploads a NetCDF file and converts its CERV2 data to JSON chunks.

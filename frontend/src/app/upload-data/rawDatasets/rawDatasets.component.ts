@@ -48,7 +48,7 @@ export class RawDatasetsUploadComponent {
   filteredKeywords: Observable<string[]>;
 
   //In the future this can be changed to desired keywords or even  loaded from the backend
-  availablePredefinedKeywords: string[] = ['SimRa', 'Kreuzberg', 'UdK', 'TU'];
+  availablePredefinedKeywords: string[] = ['Video', 'Sound', 'Picture', 'Document'];
 
   isFileDragOver = false;
   isLoading = false;
@@ -77,10 +77,10 @@ export class RawDatasetsUploadComponent {
     } else if (router.url.startsWith("/upload-data/txt")) {
       this.rawDatasetType = SupportedRawFileTypes.TXT;
       this.acceptFileFormat = ".txt"
-    } else if (router.url.startsWith("/netcdf")) {
-      // this.rawDatasetType = RawDatasetType.NETCDF;
-      // this.acceptFileFormat = ".netcdf"
-      console.error("NETCDF IS NOT SUPPORTED YET")
+    } else if (router.url.startsWith("/upload-data/netcdf")) {
+      this.rawDatasetType = SupportedRawFileTypes.NETCDF;
+      this.acceptFileFormat = ".nc"
+      //console.log("NETCDF IS NOT SUPPORTED YET")
     }
   }
 
@@ -150,8 +150,8 @@ export class RawDatasetsUploadComponent {
         this.uploadMapComponent!.inputboxTOmarker(this.longitude,this.latitude);//add pin
 
           },function(){
-                alert('GPS location failed, please refresh')
-          },{timeout:500})
+            alert('GPS server timeout, please click the button again')
+          },{timeout:8000})
     } 
     else { 
       alert('GPS location failed')}
@@ -180,6 +180,7 @@ export class RawDatasetsUploadComponent {
           const creationSuccessfull = this.translate.instant('createUpdateDatafile.fileAttachError');
           this.notificationService.showInfo(creationSuccessfull);
         } else {
+          console.log(err);
           const errorMsg = this.translate.instant('createUpdateDatafile.error');
           this.notificationService.showInfo(errorMsg);
         }

@@ -23,6 +23,7 @@ import { UploadDataModule } from './upload-data/upload-data.module';
 import { YouTubePlayerModule } from '@angular/youtube-player';
 import { environment } from 'src/environments/environment.development';
 import { HashLocationStrategy, LocationStrategy } from '@angular/common';
+import { GoogleDriveService } from 'src/app/upload-data/GoogleDriveAPI';
 
 // Factory function for TranslateHttpLoader
 export function HttpLoaderFactory(http: HttpClient) {
@@ -67,7 +68,7 @@ export function HttpLoaderFactory(http: HttpClient) {
     provideFirebaseApp(() => initializeApp(environment.firebase)),
     provideAuth(() => getAuth()),
   ],  
-  providers: [{provide: LocationStrategy, useClass: HashLocationStrategy}
+  providers: [{provide: LocationStrategy, useClass: HashLocationStrategy},GoogleDriveService
 ],
   bootstrap: [AppComponent]
 })

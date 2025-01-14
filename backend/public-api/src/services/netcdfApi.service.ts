@@ -11,7 +11,7 @@ export default abstract class NetcdfApi {
    * The base URL for the NetCDF processing endpoint.
    */
   static readonly netCdf_endpoint =
-    config.DATASCIENCE_BASE_URL + "/convert-netcdf-to-json";
+    "http://127.0.0.1:8800/api/convert-netcdf-to-json";
 
   /**
    * Retrieves metadata for a given NetCDF file.
@@ -43,7 +43,7 @@ export default abstract class NetcdfApi {
       return JSON.parse(chunks.join(""));
     } catch (error) {
       throw new FailedToParseError(
-        `Failed to parse the provided NetCDF file. ${error}`
+        `Respond from express backend NetCDF API: getMetaDataFailed  ${error} `+" API url:"+this.netCdf_endpoint + "/metadata"
       );
     }
   }
@@ -78,7 +78,7 @@ export default abstract class NetcdfApi {
       return JSON.parse(chunks.join(""));
     } catch (error) {
       throw new FailedToParseError(
-        `Failed to parse the provided NetCDF file. ${error}`
+        `Respond from express backend NetCDF API: getFileData failed. ${error}`
       );
     }
   }
@@ -97,7 +97,6 @@ export default abstract class NetcdfApi {
   ): AsyncGenerator<any, any, any> {
     try {
       const url = this.netCdf_endpoint + "/cerv2-data-chunks";
-
       // Create form data
       const formData = new FormData();
       const blob = new Blob([file.buffer], { type: file.mimetype });
@@ -133,7 +132,7 @@ export default abstract class NetcdfApi {
       }
     } catch (error) {
       console.log(error);
-      throw new FailedToParseError("Failed to parse the provided NetCDF file.");
+      throw new FailedToParseError(`Respond from express backend NetCDF API: getCERv2DataChunks failed. ${error}`);
     }
   }
 }

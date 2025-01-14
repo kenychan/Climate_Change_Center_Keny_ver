@@ -1,3 +1,5 @@
+import { GoogleDriveService } from 'src/app/upload-data/GoogleDriveAPI';
+
 import { COMMA, ENTER } from '@angular/cdk/keycodes';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, ElementRef, EventEmitter, Output, ViewChild } from '@angular/core';
@@ -63,6 +65,9 @@ export class NoFileUploadComponent {
   longitude?: number;
   latitude?: number;
 
+  selectedFile: File | null = null;
+  sharedLink: string | null = null;
+
 
 
   mediaTypeOptions: DropdownOption[] = [
@@ -76,7 +81,7 @@ export class NoFileUploadComponent {
   filteredKeywords: Observable<string[]>;
 
   //In the future this can be changed to desired keywords or even  loaded from the backend
-  availablePredefinedKeywords: string[] = ['SimRa', 'Kreuzberg', 'UdK', 'TU'];
+  availablePredefinedKeywords: string[] = ['Video', 'Sound', 'Picture', 'Document'];
   isLoading = false;
   isFileDragOver = false;
 
@@ -95,7 +100,9 @@ export class NoFileUploadComponent {
     private location: Location,
     private activatedRoute: ActivatedRoute,
     private notificationService: NotificationService,
-    private translate: TranslateService
+    private translate: TranslateService,
+    private googleDriveService: GoogleDriveService
+    
   ) {
     this.filteredKeywords = this.keywordFormControl.valueChanges.pipe(
       startWith(null),
@@ -116,7 +123,7 @@ export class NoFileUploadComponent {
         this.description = result.description;
         this.selectedKeywords = result.tags;
         this.isReferencedData = result.dataType === DataType.REFERENCED;
-        this.text = JSON.stringify((result.content as NotRef)?.data, null, 2);
+        this.text = String((result.content as NotRef)?.data['text']);
         this.url = (result.content as Ref)?.url;
         this.mediaType = (result.content as Ref)?.mediaType;
         this.longitude = result.content.location?.coordinates[0];
@@ -134,6 +141,9 @@ export class NoFileUploadComponent {
       this.isCreatingDataFile = true;
     }
   }
+
+  onFileSelected(event: any) {
+    this.selectedFile = event.target.files[0];}
 
   expandTextArea(): void {
     this.isTextExpanded = true;
@@ -201,6 +211,21 @@ export class NoFileUploadComponent {
   }
 
 
+  async uploadFile() {
+    if (!this.selectedFile) {
+      console.log('No file selected');
+      return;
+    }
+
+    try {
+      this.sharedLink = await this.googleDriveService.uploadFileToDrive(this.selectedFile);
+      console.log('File uploaded. Shared link:', this.sharedLink);
+    } catch (error) {
+      console.error('Error uploading file:', error);
+    }
+  }
+
+  
 
    getLocation() {
     if (navigator.geolocation) {
@@ -213,8 +238,8 @@ export class NoFileUploadComponent {
         this.uploadMapComponent!.inputboxTOmarker(this.longitude,this.latitude);//add pin
 
           },function(){
-                alert('GPS location failed, please refresh')
-          },{timeout:500})
+                alert('GPS server timeout, please click the button again')
+          },{timeout:8000})
     } 
     else { 
       alert('GPS location failed')}
@@ -252,6 +277,7 @@ export class NoFileUploadComponent {
       return;
     }
     const data = this.toDataFile();
+    console.log("dfdfdfff",data);
     this.isLoading = true;
     this.apiService
       .updateDatafile(this.id!, data)
@@ -293,24 +319,16 @@ export class NoFileUploadComponent {
   }
 
 
-   isGoogleDriveLink(link: string): boolean {
-    return link.includes('drive.google.com');
-  }
-  
    getDirectDownloadLink(shareLink: string): string | null {
-    if (!this.isGoogleDriveLink(shareLink)) {
-      return null;
-    }
+
   
-    const parts = shareLink.split('/');
-    const fileIdIndex = parts.findIndex(part => part === 'd');
-  
-    if (fileIdIndex !== -1 && fileIdIndex < parts.length - 1) {
-      const fileId = parts[fileIdIndex + 1];
-      return `https://drive.google.com/uc?export=download&id=${fileId}`;
-    } else {
-      return null;
+    const urlObj = new URL(shareLink);
+    if (urlObj.hostname === 'drive.google.com' && urlObj.pathname.includes('/file/d/')) {
+      const fileId = urlObj.pathname.split('/file/d/')[1].split('/')[0];
+      const newUrl = `https://drive.google.com/file/d/${fileId}/preview`;
+      return newUrl;
     }
+    return shareLink;
   }
   
 
@@ -329,7 +347,7 @@ export class NoFileUploadComponent {
       };
     } else {
       content = {
-        data: { text: this.text! as unknown as JsonObject }, //this will also escape "bad" characters in the text
+        data: { text: this.text!  }, //this will also escape "bad" characters in the text
         location:
           this.latitude != null && this.latitude != null
             ? { type: 'Point', coordinates: [this.longitude!, this.latitude!] }

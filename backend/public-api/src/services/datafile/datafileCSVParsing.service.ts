@@ -75,7 +75,7 @@ async function createCSVDatapointObjects(
       let dataID = 0;
       const documents: JsonObject[] = [];
       // Prepare all necessary data
-      let finalTags = ["CSV", "datapoint", `${file.originalname}`];
+      let finalTags = ["CSV"];
       if (tags) {
         finalTags = finalTags.concat(tags);
       }
@@ -92,12 +92,12 @@ async function createCSVDatapointObjects(
             dataType: "NOTREFERENCED",
             uploadID: uploadID,
             tags: finalTags,
-            dataSet: SupportedDatasetFileTypes.SIMRA,
+            dataSet: SupportedDatasetFileTypes.CSV,
             content: {
               data: dataObject,
               location: {
                 type: "Point",
-                coordinates: [dataObject.lon, dataObject.lat],
+                coordinates: [dataObject.lon * 1, dataObject.lat * 1],
               },
             },
           };

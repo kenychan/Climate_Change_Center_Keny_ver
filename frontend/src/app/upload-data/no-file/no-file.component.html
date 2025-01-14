@@ -55,6 +55,13 @@
     
 
     <ng-container *ngIf="isReferencedData">
+      <input class="button-upload" type="file" (change)="onFileSelected($event)" />
+      <button class="button-upload" mat-raised-button color="primary" (click)="uploadFile()" >
+        <div>
+          <span>Upload Multimedia Data</span>
+          <mat-spinner diameter="20" *ngIf="isLoading"></mat-spinner>
+        </div>
+      </button>
       <mat-form-field>
           <mat-label>{{ 'createUpdateDatafile.typeReferencedData' | translate }}</mat-label>
           <mat-select [(ngModel)]="mediaType" [required]="true"> 

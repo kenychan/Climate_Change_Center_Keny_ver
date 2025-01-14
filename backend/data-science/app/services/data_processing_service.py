@@ -101,7 +101,7 @@ class DataProcessingService:
             # Store variables
             for var_name, var in dataset.variables.items():
                 # store variable data
-                var_data = var[:].filled()
+                var_data = np.ma.masked_invalid(var[:])
                 data["variables_data"][var_name] = {
                     "dimensions": var.dimensions,
                     "data": var_data.tolist(),

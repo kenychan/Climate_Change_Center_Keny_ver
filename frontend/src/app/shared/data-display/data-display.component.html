@@ -1,12 +1,17 @@
 <div *ngIf="data.dataType == DataType.REFERENCED">
   <ng-container [ngSwitch]="data.content.mediaType">
     <ng-container *ngIf="isDialog">
+      <ng-container *ngSwitchCase="MediaType.PHOTO">
+
       <img
-        *ngSwitchCase="MediaType.PHOTO"
-        [src]="data.content.url"
+      *ngIf="!isGoogledrive(data.content.url)"
+          [src]="data.content.url"
         alt="image"
         class="display-in-dialog"
       />
+      <iframe  *ngIf="isGoogledrive(data.content.url)" [src]="safeUrl" [width]="width" allow="autoplay"></iframe>
+    </ng-container>
+
       <ng-container *ngSwitchCase="MediaType.VIDEO">
         <video
           controls
@@ -26,20 +31,23 @@
     </ng-container>
 
     <ng-container *ngIf="isDialog === false">
+
+      <ng-container *ngSwitchCase="MediaType.PHOTO" >
+
       <img
-        *ngSwitchCase="MediaType.PHOTO"
-        [src]="data.content.url"
+        *ngIf="!isGoogledrive(data.content.url)"
+        [src]="safeUrl"
         alt="image"
         [width]="width"
       />
+      <iframe  *ngIf="isGoogledrive(data.content.url)" [src]="safeUrl" [width]="width" allow="autoplay"></iframe>
+
+    </ng-container>
+
       <ng-container *ngSwitchCase="MediaType.VIDEO">
-        <video
-          controls
-          [width]="width"
-          *ngIf="!isYoutubeVideo(data.content.url)"
-        >
-          <source [src]="data.content.url" alt="video" type="video/mp4" />
-        </video>
+        <iframe  *ngIf="!isYoutubeVideo(data.content.url)" [src]="safeUrl" [width]="width" allow="autoplay"></iframe>
+
+
         <youtube-player
           *ngIf="isYoutubeVideo(data.content.url)"
           [videoId]="getYoutubeVideoID(data.content.url)"
@@ -49,9 +57,9 @@
       </ng-container>
     </ng-container>
 
-    <audio *ngSwitchCase="MediaType.SOUNDFILE" controls>
-      <source [src]="data.content.url" alt="audio" type="audio/mpeg" />
-    </audio>
+    <ng-container *ngSwitchCase="MediaType.SOUNDFILE" >
+        <iframe  *ngIf="!isYoutubeVideo(data.content.url)" [src]="safeUrl" [width]="width" allow="autoplay"></iframe>
+    </ng-container>
   </ng-container>
 </div>
 <div *ngIf="data.dataType == DataType.NOTREFERENCED">

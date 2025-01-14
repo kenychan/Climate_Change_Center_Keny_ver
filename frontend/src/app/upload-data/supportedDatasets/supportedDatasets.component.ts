@@ -151,6 +151,7 @@ export class SupportedDatasetsUploadComponent {
         this.notificationService.showInfo(creationSuccessfull);
       },
       error: (err: HttpErrorResponse) => {
+        console.log("error:",err);
         this.isLoading = false;
         const errorMsg = this.translate.instant('createUpdateDatafile.error');
         this.notificationService.showInfo(errorMsg);
